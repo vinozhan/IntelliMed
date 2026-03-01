@@ -1,0 +1,46 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notification_db
+    username: ${DB_USERNAME:intellimed}
+    password: ${DB_PASSWORD:intellimed123}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:test@gmail.com}
+    password: ${EMAIL_PASSWORD:password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:ACXXXX}
+  auth-token: ${TWILIO_AUTH_TOKEN:xxxx}
+  phone-number: ${TWILIO_PHONE_NUMBER:+1XXXXXXXXXX}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

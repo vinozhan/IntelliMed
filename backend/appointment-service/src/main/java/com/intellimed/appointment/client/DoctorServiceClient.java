@@ -1,0 +1,20 @@
+package com.intellimed.appointment.client;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+import java.util.Map;
+
+@FeignClient(name = "doctor-service")
+public interface DoctorServiceClient {
+
+    @GetMapping("/api/doctors/{id}")
+    Map<String, Object> getDoctorById(@PathVariable("id") Long id);
+
+    @GetMapping("/api/doctors/{id}/availability")
+    List<Map<String, Object>> getAvailability(@PathVariable("id") Long id,
+                                               @RequestParam(value = "date", required = false) String date);
+}

@@ -1,0 +1,6 @@
+package com.intellimed.notification.enums;
+
+public enum NotificationType {
+    APPOINTMENT_BOOKED, APPOINTMENT_CONFIRMED, APPOINTMENT_CANCELLED,
+    APPOINTMENT_COMPLETED, PAYMENT_RECEIVED, GENERAL
+}
