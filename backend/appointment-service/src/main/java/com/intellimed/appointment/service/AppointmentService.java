@@ -26,16 +26,19 @@ public class AppointmentService {
     private final NotificationServiceClient notificationServiceClient;
 
     public AppointmentDto createAppointment(Long patientId, AppointmentCreateRequest request) {
-        // Validate doctor exists
+        // Validate doctor exists and get userId
+        Map<String, Object> doctor;
         try {
-            doctorServiceClient.getDoctorById(request.getDoctorId());
+            doctor = doctorServiceClient.getDoctorById(request.getDoctorId());
         } catch (Exception e) {
             throw new RuntimeException("Doctor not found or unavailable");
         }
+        Long doctorUserId = ((Number) doctor.get("userId")).longValue();
 
         Appointment appointment = Appointment.builder()
                 .patientId(patientId)
                 .doctorId(request.getDoctorId())
+                .doctorUserId(doctorUserId)
                 .appointmentDate(request.getAppointmentDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
@@ -71,8 +74,8 @@ public class AppointmentService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public List<AppointmentDto> getDoctorAppointments(Long doctorId) {
-        return appointmentRepository.findByDoctorIdOrderByAppointmentDateDesc(doctorId)
+    public List<AppointmentDto> getDoctorAppointments(Long doctorUserId) {
+        return appointmentRepository.findByDoctorUserIdOrderByAppointmentDateDesc(doctorUserId)
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 

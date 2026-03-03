@@ -23,6 +23,8 @@ public class Appointment {
     @Column(nullable = false)
     private Long doctorId;
 
+    private Long doctorUserId;
+
     @Column(nullable = false)
     private LocalDate appointmentDate;
 

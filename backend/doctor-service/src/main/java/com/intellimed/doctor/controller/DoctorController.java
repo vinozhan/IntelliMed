@@ -46,6 +46,11 @@ public class DoctorController {
         return ResponseEntity.ok(doctorService.getDoctorById(id));
     }
 
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<DoctorDto> getDoctorByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(doctorService.getProfile(userId));
+    }
+
     @GetMapping
     public ResponseEntity<List<DoctorDto>> searchDoctors(
             @RequestParam(required = false) String specialty,

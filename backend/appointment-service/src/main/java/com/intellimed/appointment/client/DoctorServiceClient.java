@@ -14,6 +14,9 @@ public interface DoctorServiceClient {
     @GetMapping("/api/doctors/{id}")
     Map<String, Object> getDoctorById(@PathVariable("id") Long id);
 
+    @GetMapping("/api/doctors/by-user/{userId}")
+    Map<String, Object> getDoctorByUserId(@PathVariable("userId") Long userId);
+
     @GetMapping("/api/doctors/{id}/availability")
     List<Map<String, Object>> getAvailability(@PathVariable("id") Long id,
                                                @RequestParam(value = "date", required = false) String date);
