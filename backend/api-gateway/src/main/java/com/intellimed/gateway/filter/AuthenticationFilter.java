@@ -27,14 +27,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-
-        if (routeValidator.isOpenEndpoint(request)) {
-            return chain.filter(exchange);
-        }
+        boolean isOpen = routeValidator.isOpenEndpoint(request);
 
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (isOpen) {
+                return chain.filter(exchange);
+            }
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
@@ -42,10 +42,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String token = authHeader.substring(7);
 
         if (!jwtUtil.isTokenValid(token)) {
+            if (isOpen) {
+                return chain.filter(exchange);
+            }
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
+        // Token is valid — always inject headers (even for open endpoints)
         Claims claims = jwtUtil.extractAllClaims(token);
         String userId = claims.getSubject();
         String email = claims.get("email", String.class);

@@ -12,14 +12,28 @@ public class RouteValidator {
     public static final List<String> OPEN_ENDPOINTS = List.of(
             "/api/auth/register",
             "/api/auth/login",
-            "/api/doctors",
             "/api/doctors/specialties",
             "/api/payments/webhook",
             "/eureka"
     );
 
+    // Endpoints open only for GET (doctor search, doctor by ID)
+    public static final List<String> OPEN_GET_PREFIXES = List.of(
+            "/api/doctors"
+    );
+
     public boolean isOpenEndpoint(ServerHttpRequest request) {
         String path = request.getURI().getPath();
-        return OPEN_ENDPOINTS.stream().anyMatch(path::startsWith);
+        String method = request.getMethod().name();
+
+        if (OPEN_ENDPOINTS.stream().anyMatch(path::equals)) {
+            return true;
+        }
+
+        if ("GET".equals(method) && OPEN_GET_PREFIXES.stream().anyMatch(path::startsWith)) {
+            return true;
+        }
+
+        return path.startsWith("/eureka");
     }
 }
