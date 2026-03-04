@@ -14,6 +14,9 @@ public class Doctor {
     @Column(unique = true, nullable = false)
     private Long userId;
 
+    private String firstName;
+    private String lastName;
+
     private String specialty;
     private String qualification;
     private Integer experienceYears;

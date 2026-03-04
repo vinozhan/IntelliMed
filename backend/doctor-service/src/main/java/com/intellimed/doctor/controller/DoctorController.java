@@ -25,8 +25,10 @@ public class DoctorController {
     @PostMapping
     public ResponseEntity<DoctorDto> createDoctor(
             @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader(value = "X-User-FirstName", required = false) String firstName,
+            @RequestHeader(value = "X-User-LastName", required = false) String lastName,
             @Valid @RequestBody DoctorCreateRequest request) {
-        return ResponseEntity.ok(doctorService.createDoctor(userId, request));
+        return ResponseEntity.ok(doctorService.createDoctor(userId, firstName, lastName, request));
     }
 
     @GetMapping("/profile")
@@ -106,6 +108,12 @@ public class DoctorController {
     public ResponseEntity<List<PrescriptionDto>> getDoctorPrescriptions(
             @RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionsByDoctor(userId));
+    }
+
+    @GetMapping("/patients/{patientId}/prescriptions")
+    public ResponseEntity<List<PrescriptionDto>> getPatientPrescriptions(
+            @PathVariable Long patientId) {
+        return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatient(patientId));
     }
 
     // Admin endpoints

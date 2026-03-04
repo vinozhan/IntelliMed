@@ -50,10 +50,10 @@ export default function PatientDashboard() {
           <h3 className="font-semibold text-gray-800">Symptom Checker</h3>
           <p className="text-sm text-gray-500 mt-1">AI-powered analysis</p>
         </Link>
-        <Link to="/patient/prescriptions" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
+        <Link to="/patient/profile" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
           <User className="text-orange-600 mb-3" size={32} />
-          <h3 className="font-semibold text-gray-800">Prescriptions</h3>
-          <p className="text-sm text-gray-500 mt-1">View prescriptions</p>
+          <h3 className="font-semibold text-gray-800">My Profile</h3>
+          <p className="text-sm text-gray-500 mt-1">View & edit profile</p>
         </Link>
       </div>
 

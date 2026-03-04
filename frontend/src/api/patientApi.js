@@ -11,4 +11,4 @@ export const getReports = () => axiosInstance.get('/api/patients/reports');
 export const getReportsByPatientId = (patientId) =>
   axiosInstance.get(`/api/patients/${patientId}/reports`);
 export const getPrescriptionsByPatientId = (patientId) =>
-  axiosInstance.get(`/api/patients/${patientId}/prescriptions`);
+  axiosInstance.get(`/api/doctors/patients/${patientId}/prescriptions`);

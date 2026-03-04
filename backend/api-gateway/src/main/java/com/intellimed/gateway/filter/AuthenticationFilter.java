@@ -54,11 +54,15 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String userId = claims.getSubject();
         String email = claims.get("email", String.class);
         String role = claims.get("role", String.class);
+        String firstName = claims.get("firstName", String.class);
+        String lastName = claims.get("lastName", String.class);
 
         ServerHttpRequest modifiedRequest = request.mutate()
                 .header("X-User-Id", userId)
                 .header("X-User-Email", email)
                 .header("X-User-Role", role)
+                .header("X-User-FirstName", firstName != null ? firstName : "")
+                .header("X-User-LastName", lastName != null ? lastName : "")
                 .build();
 
         return chain.filter(exchange.mutate().request(modifiedRequest).build());

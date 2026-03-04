@@ -17,13 +17,15 @@ public class DoctorService {
 
     private final DoctorRepository doctorRepository;
 
-    public DoctorDto createDoctor(Long userId, DoctorCreateRequest request) {
+    public DoctorDto createDoctor(Long userId, String firstName, String lastName, DoctorCreateRequest request) {
         if (doctorRepository.findByUserId(userId).isPresent()) {
             throw new RuntimeException("Doctor profile already exists");
         }
 
         Doctor doctor = Doctor.builder()
                 .userId(userId)
+                .firstName(firstName)
+                .lastName(lastName)
                 .specialty(request.getSpecialty())
                 .qualification(request.getQualification())
                 .experienceYears(request.getExperienceYears())
@@ -64,7 +66,9 @@ public class DoctorService {
     public List<DoctorDto> searchDoctors(String specialty, String name) {
         List<Doctor> doctors;
         if (specialty != null && !specialty.isEmpty()) {
-            doctors = doctorRepository.findBySpecialtyContainingIgnoreCase(specialty);
+            doctors = doctorRepository.findBySpecialtyContainingIgnoreCaseAndIsVerifiedTrue(specialty);
+        } else if (name != null && !name.isEmpty()) {
+            doctors = doctorRepository.findByIsVerifiedTrueAndFirstNameContainingIgnoreCaseOrIsVerifiedTrueAndLastNameContainingIgnoreCase(name, name);
         } else {
             doctors = doctorRepository.findByIsVerifiedTrue();
         }
@@ -97,6 +101,8 @@ public class DoctorService {
         return DoctorDto.builder()
                 .id(doctor.getId())
                 .userId(doctor.getUserId())
+                .firstName(doctor.getFirstName())
+                .lastName(doctor.getLastName())
                 .specialty(doctor.getSpecialty())
                 .qualification(doctor.getQualification())
                 .experienceYears(doctor.getExperienceYears())

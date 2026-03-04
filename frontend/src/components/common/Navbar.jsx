@@ -46,6 +46,9 @@ export default function Navbar() {
                     <Link to="/patient/dashboard" className="text-gray-600 hover:text-blue-600">
                       Dashboard
                     </Link>
+                    <Link to="/patient/profile" className="text-gray-600 hover:text-blue-600">
+                      My Profile
+                    </Link>
                     <Link to="/symptom-checker" className="text-gray-600 hover:text-blue-600">
                       AI Symptom Checker
                     </Link>
@@ -102,6 +105,9 @@ export default function Navbar() {
                 <>
                   <Link to="/patient/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
                     Dashboard
+                  </Link>
+                  <Link to="/patient/profile" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
+                    My Profile
                   </Link>
                   <Link to="/symptom-checker" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
                     AI Symptom Checker
