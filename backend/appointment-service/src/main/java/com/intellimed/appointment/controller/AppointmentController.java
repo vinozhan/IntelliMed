@@ -5,6 +5,7 @@ import com.intellimed.appointment.dto.AppointmentDto;
 import com.intellimed.appointment.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,15 +32,33 @@ public class AppointmentController {
     }
 
     @GetMapping("/patient")
-    public ResponseEntity<List<AppointmentDto>> getPatientAppointments(
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<?> getPatientAppointments(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(appointmentService.getPatientAppointments(userId, page, size));
+        }
         return ResponseEntity.ok(appointmentService.getPatientAppointments(userId));
     }
 
     @GetMapping("/doctor")
-    public ResponseEntity<List<AppointmentDto>> getDoctorAppointments(
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<?> getDoctorAppointments(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(appointmentService.getDoctorAppointments(userId, page, size));
+        }
         return ResponseEntity.ok(appointmentService.getDoctorAppointments(userId));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getAppointmentStats(@RequestHeader("X-User-Role") String role) {
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(appointmentService.getStats());
     }
 
     @PutMapping("/{id}")

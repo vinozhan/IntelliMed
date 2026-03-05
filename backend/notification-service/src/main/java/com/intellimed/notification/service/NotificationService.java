@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,6 +64,11 @@ public class NotificationService {
     public List<NotificationDto> getAllNotifications() {
         return logRepository.findAllByOrderBySentAtDesc()
                 .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public Page<NotificationDto> getAllNotifications(int page, int size) {
+        return logRepository.findAllByOrderBySentAtDesc(PageRequest.of(page, size))
+                .map(this::toDto);
     }
 
     private NotificationDto toDto(NotificationLog n) {

@@ -26,4 +26,7 @@ public class AvailabilitySlot {
 
     @Builder.Default
     private Integer maxPatients = 1;
+
+    @Builder.Default
+    private Integer currentBookings = 0;
 }

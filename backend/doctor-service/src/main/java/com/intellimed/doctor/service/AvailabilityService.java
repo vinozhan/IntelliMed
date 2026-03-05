@@ -112,6 +112,40 @@ public class AvailabilityService {
         return slots.stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public AvailabilitySlotDto findSlot(Long doctorId, LocalDate date, LocalTime startTime) {
+        return slotRepository.findByDoctorIdAndSlotDateAndStartTime(doctorId, date, startTime)
+                .map(this::toDto)
+                .orElse(null);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public AvailabilitySlotDto consumeSlot(Long slotId) {
+        AvailabilitySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        int newBookings = (slot.getCurrentBookings() != null ? slot.getCurrentBookings() : 0) + 1;
+        slot.setCurrentBookings(newBookings);
+        if (newBookings >= slot.getMaxPatients()) {
+            slot.setIsAvailable(false);
+        }
+        slot = slotRepository.save(slot);
+        return toDto(slot);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public AvailabilitySlotDto releaseSlot(Long slotId) {
+        AvailabilitySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        int newBookings = Math.max(0, (slot.getCurrentBookings() != null ? slot.getCurrentBookings() : 0) - 1);
+        slot.setCurrentBookings(newBookings);
+        if (newBookings < slot.getMaxPatients()) {
+            slot.setIsAvailable(true);
+        }
+        slot = slotRepository.save(slot);
+        return toDto(slot);
+    }
+
     private AvailabilitySlotDto toDto(AvailabilitySlot slot) {
         return AvailabilitySlotDto.builder()
                 .id(slot.getId())
@@ -122,6 +156,7 @@ public class AvailabilityService {
                 .slotDate(slot.getSlotDate())
                 .isAvailable(slot.getIsAvailable())
                 .maxPatients(slot.getMaxPatients())
+                .currentBookings(slot.getCurrentBookings())
                 .build();
     }
 }

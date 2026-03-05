@@ -45,18 +45,36 @@ public class PaymentController {
     }
 
     @GetMapping("/patient")
-    public ResponseEntity<List<PaymentDto>> getPatientPayments(
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<?> getPatientPayments(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(paymentService.getPatientPayments(userId, page, size));
+        }
         return ResponseEntity.ok(paymentService.getPatientPayments(userId));
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<List<PaymentDto>> getAllPayments(
-            @RequestHeader("X-User-Role") String role) {
+    public ResponseEntity<?> getAllPayments(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
         if (!"ADMIN".equals(role)) {
             return ResponseEntity.status(403).build();
         }
+        if (page != null) {
+            return ResponseEntity.ok(paymentService.getAllPayments(page, size));
+        }
         return ResponseEntity.ok(paymentService.getAllPayments());
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getPaymentStats(@RequestHeader("X-User-Role") String role) {
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(paymentService.getStats());
     }
 
     @PostMapping("/webhook")

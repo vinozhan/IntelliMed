@@ -15,6 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +71,28 @@ public class AppointmentService {
                 .status(AppointmentStatus.PENDING)
                 .build();
 
+        // Try to consume availability slot
+        try {
+            Map<String, Object> slot = doctorServiceClient.findSlot(
+                    request.getDoctorId(),
+                    request.getAppointmentDate().toString(),
+                    request.getStartTime().toString());
+            if (slot != null && slot.get("id") != null) {
+                Long slotId = ((Number) slot.get("id")).longValue();
+                Boolean isAvailable = (Boolean) slot.get("isAvailable");
+                if (Boolean.FALSE.equals(isAvailable)) {
+                    throw new RuntimeException("This time slot is no longer available");
+                }
+                doctorServiceClient.consumeSlot(slotId);
+                appointment.setSlotId(slotId);
+            }
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("no longer available")) {
+                throw e;
+            }
+            log.warn("Slot consumption skipped: {}", e.getMessage());
+        }
+
         appointment = appointmentRepository.save(appointment);
 
         // Send notification with proper payload
@@ -105,9 +130,19 @@ public class AppointmentService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public Page<AppointmentDto> getPatientAppointments(Long patientId, int page, int size) {
+        return appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId, PageRequest.of(page, size))
+                .map(this::toDto);
+    }
+
     public List<AppointmentDto> getDoctorAppointments(Long doctorUserId) {
         return appointmentRepository.findByDoctorUserIdOrderByAppointmentDateDesc(doctorUserId)
                 .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public Page<AppointmentDto> getDoctorAppointments(Long doctorUserId, int page, int size) {
+        return appointmentRepository.findByDoctorUserIdOrderByAppointmentDateDesc(doctorUserId, PageRequest.of(page, size))
+                .map(this::toDto);
     }
 
     @Transactional
@@ -157,6 +192,16 @@ public class AppointmentService {
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancellationReason(reason);
+
+        // Release the slot if one was consumed
+        if (appointment.getSlotId() != null) {
+            try {
+                doctorServiceClient.releaseSlot(appointment.getSlotId());
+            } catch (Exception e) {
+                log.warn("Failed to release slot {}: {}", appointment.getSlotId(), e.getMessage());
+            }
+        }
+
         appointment = appointmentRepository.save(appointment);
         return toDto(appointment);
     }
@@ -196,6 +241,16 @@ public class AppointmentService {
 
         appointment.setStatus(AppointmentStatus.REJECTED);
         appointment.setCancellationReason(reason);
+
+        // Release the slot if one was consumed
+        if (appointment.getSlotId() != null) {
+            try {
+                doctorServiceClient.releaseSlot(appointment.getSlotId());
+            } catch (Exception e) {
+                log.warn("Failed to release slot {}: {}", appointment.getSlotId(), e.getMessage());
+            }
+        }
+
         appointment = appointmentRepository.save(appointment);
         return toDto(appointment);
     }
@@ -217,6 +272,15 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointment = appointmentRepository.save(appointment);
         return toDto(appointment);
+    }
+
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new java.util.LinkedHashMap<>();
+        stats.put("totalAppointments", appointmentRepository.count());
+        for (AppointmentStatus status : AppointmentStatus.values()) {
+            stats.put(status.name().toLowerCase() + "Count", appointmentRepository.countByStatus(status));
+        }
+        return stats;
     }
 
     private AppointmentDto toDto(Appointment a) {

@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "notification-service")
+@FeignClient(name = "notification-service", fallback = NotificationServiceClientFallback.class)
 public interface NotificationServiceClient {
 
     @PostMapping("/api/notifications/send")

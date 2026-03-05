@@ -14,5 +14,6 @@ public class AvailabilitySlotDto {
     private LocalDate slotDate;
     private Boolean isAvailable;
     private Integer maxPatients;
+    private Integer currentBookings;
     private Integer slotDurationMinutes;
 }

@@ -16,8 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,9 +84,29 @@ public class PaymentService {
                 .stream().map(p -> toDto(p, false)).collect(Collectors.toList());
     }
 
+    public Page<PaymentDto> getPatientPayments(Long patientId, int page, int size) {
+        return paymentRepository.findByPatientIdOrderByPaidAtDesc(patientId, PageRequest.of(page, size))
+                .map(p -> toDto(p, false));
+    }
+
     public List<PaymentDto> getAllPayments() {
         return paymentRepository.findAllByOrderByPaidAtDesc()
                 .stream().map(p -> toDto(p, false)).collect(Collectors.toList());
+    }
+
+    public Page<PaymentDto> getAllPayments(int page, int size) {
+        return paymentRepository.findAllByOrderByPaidAtDesc(PageRequest.of(page, size))
+                .map(p -> toDto(p, false));
+    }
+
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("totalPayments", paymentRepository.count());
+        for (PaymentStatus status : PaymentStatus.values()) {
+            stats.put(status.name().toLowerCase() + "Count", paymentRepository.countByStatus(status));
+        }
+        stats.put("totalRevenue", paymentRepository.sumAmountByStatus(PaymentStatus.COMPLETED));
+        return stats;
     }
 
     @Transactional

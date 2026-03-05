@@ -2,6 +2,8 @@ package com.intellimed.appointment.repository;
 
 import com.intellimed.appointment.entity.Appointment;
 import com.intellimed.appointment.enums.AppointmentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,9 +14,12 @@ import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
     List<Appointment> findByPatientIdOrderByAppointmentDateDesc(Long patientId);
+    Page<Appointment> findByPatientIdOrderByAppointmentDateDesc(Long patientId, Pageable pageable);
     List<Appointment> findByDoctorIdOrderByAppointmentDateDesc(Long doctorId);
     List<Appointment> findByDoctorUserIdOrderByAppointmentDateDesc(Long doctorUserId);
+    Page<Appointment> findByDoctorUserIdOrderByAppointmentDateDesc(Long doctorUserId, Pageable pageable);
     List<Appointment> findByDoctorIdAndStatus(Long doctorId, AppointmentStatus status);
+    long countByStatus(AppointmentStatus status);
 
     @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE a.doctorId = :doctorId " +
             "AND a.appointmentDate = :date " +

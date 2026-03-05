@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -54,9 +55,14 @@ public class DoctorController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DoctorDto>> searchDoctors(
+    public ResponseEntity<?> searchDoctors(
             @RequestParam(required = false) String specialty,
-            @RequestParam(required = false) String name) {
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(doctorService.searchDoctors(specialty, name, page, size));
+        }
         return ResponseEntity.ok(doctorService.searchDoctors(specialty, name));
     }
 
@@ -96,6 +102,28 @@ public class DoctorController {
         return ResponseEntity.ok(availabilityService.getAvailability(id, date));
     }
 
+    @GetMapping("/{doctorId}/availability/slot")
+    public ResponseEntity<AvailabilitySlotDto> findSlot(
+            @PathVariable Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime) {
+        AvailabilitySlotDto slot = availabilityService.findSlot(doctorId, date, startTime);
+        if (slot == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(slot);
+    }
+
+    @PutMapping("/availability/{slotId}/consume")
+    public ResponseEntity<AvailabilitySlotDto> consumeSlot(@PathVariable Long slotId) {
+        return ResponseEntity.ok(availabilityService.consumeSlot(slotId));
+    }
+
+    @PutMapping("/availability/{slotId}/release")
+    public ResponseEntity<AvailabilitySlotDto> releaseSlot(@PathVariable Long slotId) {
+        return ResponseEntity.ok(availabilityService.releaseSlot(slotId));
+    }
+
     // Prescription endpoints
     @PostMapping("/prescriptions")
     public ResponseEntity<PrescriptionDto> createPrescription(
@@ -113,18 +141,36 @@ public class DoctorController {
     }
 
     @GetMapping("/prescriptions")
-    public ResponseEntity<List<PrescriptionDto>> getDoctorPrescriptions(
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<?> getDoctorPrescriptions(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(prescriptionService.getPrescriptionsByDoctor(userId, page, size));
+        }
         return ResponseEntity.ok(prescriptionService.getPrescriptionsByDoctor(userId));
     }
 
     @GetMapping("/patients/{patientId}/prescriptions")
-    public ResponseEntity<List<PrescriptionDto>> getPatientPrescriptions(
-            @PathVariable Long patientId) {
+    public ResponseEntity<?> getPatientPrescriptions(
+            @PathVariable Long patientId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatient(patientId, page, size));
+        }
         return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatient(patientId));
     }
 
     // Admin endpoints
+    @GetMapping("/stats")
+    public ResponseEntity<?> getDoctorStats(@RequestHeader("X-User-Role") String role) {
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(doctorService.getStats());
+    }
+
     @GetMapping("/unverified")
     public ResponseEntity<List<DoctorDto>> getUnverifiedDoctors(@RequestHeader("X-User-Role") String role) {
         if (!"ADMIN".equals(role)) {

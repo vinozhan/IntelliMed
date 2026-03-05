@@ -34,7 +34,12 @@ public class NotificationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<NotificationDto>> getAllNotifications() {
+    public ResponseEntity<?> getAllNotifications(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page != null) {
+            return ResponseEntity.ok(notificationService.getAllNotifications(page, size));
+        }
         return ResponseEntity.ok(notificationService.getAllNotifications());
     }
 }

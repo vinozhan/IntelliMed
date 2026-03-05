@@ -39,6 +39,8 @@ public class Appointment {
     private String notes;
     private String cancellationReason;
 
+    private Long slotId;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
