@@ -16,10 +16,8 @@ frontend/dist/
 # IDE
 .idea/
 *.iml
-.vscode/settings.json
 
 # Environment
-.env
 *.env
 !.env.example
 
@@ -35,3 +33,5 @@ uploads/
 CLAUDE.md
 *.csv
 *.log
+BACKEND_API_REFERENCE.md
+config.bat
