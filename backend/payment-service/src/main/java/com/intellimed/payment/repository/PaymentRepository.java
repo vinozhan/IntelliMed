@@ -9,4 +9,5 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByAppointmentId(Long appointmentId);
     List<Payment> findByPatientIdOrderByPaidAtDesc(Long patientId);
     Optional<Payment> findByStripePaymentIntentId(String paymentIntentId);
+    List<Payment> findAllByOrderByPaidAtDesc();
 }

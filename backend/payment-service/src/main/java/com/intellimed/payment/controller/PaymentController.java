@@ -50,6 +50,15 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPatientPayments(userId));
     }
 
+    @GetMapping("/admin")
+    public ResponseEntity<List<PaymentDto>> getAllPayments(
+            @RequestHeader("X-User-Role") String role) {
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(paymentService.getAllPayments());
+    }
+
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
