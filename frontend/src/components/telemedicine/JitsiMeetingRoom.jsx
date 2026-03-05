@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getSession, createSession, startSession, endSession } from '../../api/telemedicineApi';
-import { getAppointment } from '../../api/appointmentApi';
+import { getAppointment, completeAppointment } from '../../api/appointmentApi';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 import { toast } from 'react-toastify';
 
@@ -12,8 +12,13 @@ export default function JitsiMeetingRoom() {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const initSession = async () => {
       try {
         let sessionData;
@@ -29,17 +34,28 @@ export default function JitsiMeetingRoom() {
             });
             sessionData = data;
           } else {
-            toast.error('Waiting for doctor to start the session');
+            setStatusMessage('Waiting for the doctor to start the session. Please try again shortly.');
             return;
           }
         }
+
+        if (sessionData.status === 'ENDED' || sessionData.status === 'COMPLETED') {
+          setStatusMessage('This consultation session has already ended.');
+          return;
+        }
+
         setSession(sessionData);
 
         if (user.role === 'DOCTOR' && sessionData.status === 'WAITING') {
           await startSession(sessionData.id);
         }
       } catch (err) {
-        toast.error('Failed to initialize video session');
+        const status = err.response?.status;
+        if (status === 400 || status === 409) {
+          setStatusMessage('This consultation session has already been completed.');
+        } else {
+          setStatusMessage('Unable to connect to the video session. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -51,7 +67,8 @@ export default function JitsiMeetingRoom() {
     if (session) {
       try {
         await endSession(session.id);
-        toast.success('Session ended');
+        await completeAppointment(appointmentId);
+        toast.success('Consultation completed');
       } catch (err) {
         console.error(err);
       }
@@ -63,8 +80,8 @@ export default function JitsiMeetingRoom() {
 
   if (!session) return (
     <div className="flex flex-col items-center justify-center min-h-screen">
-      <p className="text-gray-500 mb-4">Session not available yet</p>
-      <button onClick={() => navigate(-1)} className="bg-blue-600 text-white px-4 py-2 rounded-lg">Go Back</button>
+      <p className="text-gray-600 text-lg mb-4">{statusMessage || 'Session not available'}</p>
+      <button onClick={() => navigate(-1)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Go Back</button>
     </div>
   );
 

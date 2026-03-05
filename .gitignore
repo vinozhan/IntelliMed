@@ -33,3 +33,5 @@ uploads/
 #text
 *.txt
 CLAUDE.md
+*.csv
+*.log

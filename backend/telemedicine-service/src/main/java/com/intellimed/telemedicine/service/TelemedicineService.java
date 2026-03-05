@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -19,11 +20,16 @@ public class TelemedicineService {
     private final VideoSessionRepository sessionRepository;
 
     public VideoSessionDto createSession(Long doctorId, CreateSessionRequest request) {
-        // Check if session already exists for this appointment
-        sessionRepository.findByAppointmentId(request.getAppointmentId())
-                .ifPresent(s -> {
-                    throw new RuntimeException("Session already exists for this appointment");
-                });
+        // If an active/waiting session exists, return it
+        Optional<VideoSession> existing = sessionRepository.findByAppointmentId(request.getAppointmentId());
+        if (existing.isPresent()) {
+            VideoSession s = existing.get();
+            if (s.getStatus() == SessionStatus.WAITING || s.getStatus() == SessionStatus.ACTIVE) {
+                return toDto(s);
+            }
+            // Previous session ended — remove it so a new one can be created
+            sessionRepository.delete(s);
+        }
 
         String roomName = "intellimed-" + request.getAppointmentId() + "-" + UUID.randomUUID().toString().substring(0, 8);
 

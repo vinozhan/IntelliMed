@@ -24,9 +24,11 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/doctors" className="text-gray-600 hover:text-blue-600">
-              Find Doctors
-            </Link>
+            {(!user || user.role !== 'DOCTOR') && (
+              <Link to="/doctors" className="text-gray-600 hover:text-blue-600">
+                Find Doctors
+              </Link>
+            )}
             {!user ? (
               <>
                 <Link to="/login" className="text-gray-600 hover:text-blue-600">
@@ -46,8 +48,11 @@ export default function Navbar() {
                     <Link to="/patient/dashboard" className="text-gray-600 hover:text-blue-600">
                       Dashboard
                     </Link>
-                    <Link to="/patient/profile" className="text-gray-600 hover:text-blue-600">
-                      My Profile
+                    <Link to="/patient/appointments" className="text-gray-600 hover:text-blue-600">
+                      Appointments
+                    </Link>
+                    <Link to="/patient/prescriptions" className="text-gray-600 hover:text-blue-600">
+                      Prescriptions
                     </Link>
                     <Link to="/symptom-checker" className="text-gray-600 hover:text-blue-600">
                       AI Symptom Checker
@@ -55,9 +60,14 @@ export default function Navbar() {
                   </>
                 )}
                 {user.role === 'DOCTOR' && (
-                  <Link to="/doctor/dashboard" className="text-gray-600 hover:text-blue-600">
-                    Dashboard
-                  </Link>
+                  <>
+                    <Link to="/doctor/dashboard" className="text-gray-600 hover:text-blue-600">
+                      Dashboard
+                    </Link>
+                    <Link to="/doctor/appointments" className="text-gray-600 hover:text-blue-600">
+                      Appointments
+                    </Link>
+                  </>
                 )}
                 {user.role === 'ADMIN' && (
                   <Link to="/admin/dashboard" className="text-gray-600 hover:text-blue-600">
@@ -87,9 +97,11 @@ export default function Navbar() {
 
       {open && (
         <div className="md:hidden px-4 pb-4 space-y-2">
-          <Link to="/doctors" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-            Find Doctors
-          </Link>
+          {(!user || user.role !== 'DOCTOR') && (
+            <Link to="/doctors" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
+              Find Doctors
+            </Link>
+          )}
           {!user ? (
             <>
               <Link to="/login" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
@@ -106,8 +118,11 @@ export default function Navbar() {
                   <Link to="/patient/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
                     Dashboard
                   </Link>
-                  <Link to="/patient/profile" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    My Profile
+                  <Link to="/patient/appointments" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
+                    Appointments
+                  </Link>
+                  <Link to="/patient/prescriptions" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
+                    Prescriptions
                   </Link>
                   <Link to="/symptom-checker" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
                     AI Symptom Checker
@@ -115,9 +130,14 @@ export default function Navbar() {
                 </>
               )}
               {user.role === 'DOCTOR' && (
-                <Link to="/doctor/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                  Dashboard
-                </Link>
+                <>
+                  <Link to="/doctor/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <Link to="/doctor/appointments" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
+                    Appointments
+                  </Link>
+                </>
               )}
               {user.role === 'ADMIN' && (
                 <Link to="/admin/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>

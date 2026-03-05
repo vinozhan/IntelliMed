@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getDoctorPrescriptions, createPrescription } from '../../api/doctorApi';
 import { formatDateTime } from '../../utils/helpers';
 import { toast } from 'react-toastify';
 
 export default function DoctorPrescriptions() {
+  const [searchParams] = useSearchParams();
+  const prefilledAppointmentId = searchParams.get('appointmentId') || '';
+  const prefilledPatientId = searchParams.get('patientId') || '';
+
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!prefilledAppointmentId);
   const [form, setForm] = useState({
-    appointmentId: '', patientId: '', diagnosis: '', medications: '', instructions: '', notes: '',
+    appointmentId: prefilledAppointmentId, patientId: prefilledPatientId, diagnosis: '', medications: '', instructions: '', notes: '',
   });
 
   useEffect(() => {
@@ -57,11 +62,11 @@ export default function DoctorPrescriptions() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Appointment ID</label>
-              <input type="number" required className="w-full px-4 py-2 border rounded-lg" value={form.appointmentId} onChange={(e) => setForm({ ...form, appointmentId: e.target.value })} />
+              <input type="number" required className="w-full px-4 py-2 border rounded-lg bg-gray-50" value={form.appointmentId} readOnly={!!prefilledAppointmentId} onChange={(e) => setForm({ ...form, appointmentId: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Patient ID</label>
-              <input type="number" required className="w-full px-4 py-2 border rounded-lg" value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} />
+              <input type="number" required className="w-full px-4 py-2 border rounded-lg bg-gray-50" value={form.patientId} readOnly={!!prefilledPatientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} />
             </div>
           </div>
           <div>

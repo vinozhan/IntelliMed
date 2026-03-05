@@ -67,7 +67,7 @@ public class DoctorController {
 
     // Availability endpoints
     @PostMapping("/availability")
-    public ResponseEntity<AvailabilitySlotDto> createSlot(
+    public ResponseEntity<List<AvailabilitySlotDto>> createSlot(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody AvailabilitySlotDto dto) {
         return ResponseEntity.ok(availabilityService.createSlot(userId, dto));

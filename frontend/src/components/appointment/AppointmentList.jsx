@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getPatientAppointments, getDoctorAppointments, cancelAppointment, confirmAppointment, completeAppointment } from '../../api/appointmentApi';
 import { formatDate, formatTime, getStatusColor } from '../../utils/helpers';
@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 
 export default function AppointmentList() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -94,6 +95,11 @@ export default function AppointmentList() {
                 {user.role === 'DOCTOR' && apt.status === 'CONFIRMED' && (
                   <button onClick={() => handleComplete(apt.id)} className="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-purple-700">
                     Complete
+                  </button>
+                )}
+                {user.role === 'DOCTOR' && apt.status === 'COMPLETED' && (
+                  <button onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}`)} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-600">
+                    Write Prescription
                   </button>
                 )}
                 {(apt.status === 'PENDING' || apt.status === 'CONFIRMED') && (

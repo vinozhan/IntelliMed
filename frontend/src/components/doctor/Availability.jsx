@@ -9,7 +9,7 @@ export default function DoctorAvailability() {
   const [doctorId, setDoctorId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    slotDate: '', startTime: '', endTime: '', maxPatients: 1,
+    slotDate: '', startTime: '', endTime: '', maxPatients: 1, slotDurationMinutes: 30,
   });
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function DoctorAvailability() {
       toast.success('Slot added!');
       const { data } = await getDoctorAvailability(doctorId);
       setSlots(data);
-      setForm({ slotDate: '', startTime: '', endTime: '', maxPatients: 1 });
+      setForm({ slotDate: '', startTime: '', endTime: '', maxPatients: 1, slotDurationMinutes: 30 });
     } catch (err) {
       toast.error('Failed to add slot');
     }
@@ -59,10 +59,10 @@ export default function DoctorAvailability() {
 
       <form onSubmit={handleAdd} className="bg-white rounded-xl shadow p-6 mb-6 space-y-4">
         <h2 className="text-lg font-semibold">Add New Slot</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input type="date" required className="w-full px-3 py-2 border rounded-lg" value={form.slotDate} onChange={(e) => setForm({ ...form, slotDate: e.target.value })} />
+            <input type="date" required className="w-full px-3 py-2 border rounded-lg" value={form.slotDate} onChange={(e) => setForm({ ...form, slotDate: e.target.value })} min={new Date().toISOString().split('T')[0]} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
@@ -71,6 +71,16 @@ export default function DoctorAvailability() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
             <input type="time" required className="w-full px-3 py-2 border rounded-lg" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Slot Duration</label>
+            <select className="w-full px-3 py-2 border rounded-lg" value={form.slotDurationMinutes} onChange={(e) => setForm({ ...form, slotDurationMinutes: parseInt(e.target.value) })}>
+              <option value={15}>15 min</option>
+              <option value={20}>20 min</option>
+              <option value={30}>30 min</option>
+              <option value={45}>45 min</option>
+              <option value={60}>60 min</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Max Patients</label>

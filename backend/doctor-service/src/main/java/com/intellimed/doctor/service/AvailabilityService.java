@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,22 +21,49 @@ public class AvailabilityService {
     private final AvailabilitySlotRepository slotRepository;
     private final DoctorRepository doctorRepository;
 
-    public AvailabilitySlotDto createSlot(Long userId, AvailabilitySlotDto dto) {
+    public List<AvailabilitySlotDto> createSlot(Long userId, AvailabilitySlotDto dto) {
         Doctor doctor = doctorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
 
-        AvailabilitySlot slot = AvailabilitySlot.builder()
-                .doctorId(doctor.getId())
-                .dayOfWeek(dto.getDayOfWeek())
-                .startTime(dto.getStartTime())
-                .endTime(dto.getEndTime())
-                .slotDate(dto.getSlotDate())
-                .isAvailable(true)
-                .maxPatients(dto.getMaxPatients() != null ? dto.getMaxPatients() : 1)
-                .build();
+        String dayOfWeek = dto.getDayOfWeek();
+        if (dayOfWeek == null && dto.getSlotDate() != null) {
+            dayOfWeek = dto.getSlotDate().getDayOfWeek().name();
+        }
 
-        slot = slotRepository.save(slot);
-        return toDto(slot);
+        int duration = dto.getSlotDurationMinutes() != null ? dto.getSlotDurationMinutes() : 0;
+        int maxPatients = dto.getMaxPatients() != null ? dto.getMaxPatients() : 1;
+
+        List<AvailabilitySlot> savedSlots = new java.util.ArrayList<>();
+
+        if (duration > 0) {
+            LocalTime current = dto.getStartTime();
+            while (current.plusMinutes(duration).compareTo(dto.getEndTime()) <= 0) {
+                AvailabilitySlot slot = AvailabilitySlot.builder()
+                        .doctorId(doctor.getId())
+                        .dayOfWeek(dayOfWeek)
+                        .startTime(current)
+                        .endTime(current.plusMinutes(duration))
+                        .slotDate(dto.getSlotDate())
+                        .isAvailable(true)
+                        .maxPatients(maxPatients)
+                        .build();
+                savedSlots.add(slotRepository.save(slot));
+                current = current.plusMinutes(duration);
+            }
+        } else {
+            AvailabilitySlot slot = AvailabilitySlot.builder()
+                    .doctorId(doctor.getId())
+                    .dayOfWeek(dayOfWeek)
+                    .startTime(dto.getStartTime())
+                    .endTime(dto.getEndTime())
+                    .slotDate(dto.getSlotDate())
+                    .isAvailable(true)
+                    .maxPatients(maxPatients)
+                    .build();
+            savedSlots.add(slotRepository.save(slot));
+        }
+
+        return savedSlots.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     public AvailabilitySlotDto updateSlot(Long userId, Long slotId, AvailabilitySlotDto dto) {

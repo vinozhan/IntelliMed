@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getPatientAppointments } from '../../api/appointmentApi';
 import { formatDate, formatTime, getStatusColor } from '../../utils/helpers';
-import { Calendar, FileText, Brain, User } from 'lucide-react';
+import { Calendar, FileText, Brain, User, ClipboardList, Pill } from 'lucide-react';
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -34,11 +34,21 @@ export default function PatientDashboard() {
         Welcome, {user?.firstName}!
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
         <Link to="/doctors" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
           <Calendar className="text-blue-600 mb-3" size={32} />
           <h3 className="font-semibold text-gray-800">Book Appointment</h3>
           <p className="text-sm text-gray-500 mt-1">Find and book a doctor</p>
+        </Link>
+        <Link to="/patient/appointments" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
+          <ClipboardList className="text-teal-600 mb-3" size={32} />
+          <h3 className="font-semibold text-gray-800">My Appointments</h3>
+          <p className="text-sm text-gray-500 mt-1">View all appointments</p>
+        </Link>
+        <Link to="/patient/prescriptions" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
+          <Pill className="text-red-600 mb-3" size={32} />
+          <h3 className="font-semibold text-gray-800">Prescriptions</h3>
+          <p className="text-sm text-gray-500 mt-1">View prescriptions</p>
         </Link>
         <Link to="/patient/reports" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
           <FileText className="text-green-600 mb-3" size={32} />
