@@ -22,22 +22,39 @@ public class TelemedicineController {
     }
 
     @GetMapping("/{appointmentId}")
-    public ResponseEntity<VideoSessionDto> getSession(@PathVariable Long appointmentId) {
-        return ResponseEntity.ok(telemedicineService.getSessionByAppointment(appointmentId));
+    public ResponseEntity<VideoSessionDto> getSession(
+            @PathVariable Long appointmentId,
+            @RequestHeader("X-User-Id") Long userId) {
+        VideoSessionDto session = telemedicineService.getSessionByAppointment(appointmentId);
+        if (!userId.equals(session.getDoctorId()) && !userId.equals(session.getPatientId())) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(session);
     }
 
     @PutMapping("/{id}/start")
-    public ResponseEntity<VideoSessionDto> startSession(@PathVariable Long id) {
+    public ResponseEntity<VideoSessionDto> startSession(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(telemedicineService.startSession(id));
     }
 
     @PutMapping("/{id}/end")
-    public ResponseEntity<VideoSessionDto> endSession(@PathVariable Long id) {
+    public ResponseEntity<VideoSessionDto> endSession(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(telemedicineService.endSession(id));
     }
 
     @GetMapping("/{id}/join-info")
-    public ResponseEntity<JoinInfoDto> getJoinInfo(@PathVariable Long id) {
-        return ResponseEntity.ok(telemedicineService.getJoinInfo(id));
+    public ResponseEntity<JoinInfoDto> getJoinInfo(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        JoinInfoDto joinInfo = telemedicineService.getJoinInfo(id);
+        VideoSessionDto session = telemedicineService.getSessionById(id);
+        if (!userId.equals(session.getDoctorId()) && !userId.equals(session.getPatientId())) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(joinInfo);
     }
 }

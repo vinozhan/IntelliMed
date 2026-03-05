@@ -19,6 +19,33 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new java.util.LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "error", "Validation failed",
+                "fieldErrors", fieldErrors,
+                "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleMalformedJson(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "error", "Malformed request body",
+                "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "error", ex.getMessage(),
+                "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(

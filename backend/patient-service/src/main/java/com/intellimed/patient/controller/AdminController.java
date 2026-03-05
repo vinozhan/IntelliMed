@@ -17,11 +17,25 @@ public class AdminController {
     private final AdminService adminService;
 
     @GetMapping("/users")
-    public ResponseEntity<List<UserDto>> getAllUsers(@RequestHeader("X-User-Role") String role) {
+    public ResponseEntity<?> getAllUsers(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(defaultValue = "20") int size) {
         if (!"ADMIN".equals(role)) {
             return ResponseEntity.status(403).build();
         }
+        if (page != null) {
+            return ResponseEntity.ok(adminService.getAllUsers(page, size));
+        }
         return ResponseEntity.ok(adminService.getAllUsers());
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats(@RequestHeader("X-User-Role") String role) {
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(adminService.getStats());
     }
 
     @PutMapping("/users/{id}/status")

@@ -29,6 +29,23 @@ spec:
                 secretKeyRef:
                   name: intellimed-secrets
                   key: DB_PASSWORD
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "intellimed"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "intellimed"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
           volumeMounts:
             - name: pgdata
               mountPath: /var/lib/postgresql/data

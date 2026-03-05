@@ -5,7 +5,12 @@ metadata:
   namespace: intellimed
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
+  tls:
+    - hosts:
+        - intellimed.local
+      secretName: intellimed-tls
   rules:
     - host: intellimed.local
       http:

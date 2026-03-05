@@ -12,11 +12,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -27,7 +30,13 @@ public class PatientService {
     private final UserRepository userRepository;
     private final MedicalReportRepository reportRepository;
 
-    private final String uploadDir = "uploads/reports/";
+    @Value("${app.upload-dir:uploads/reports/}")
+    private String uploadDir;
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "application/pdf", "image/jpeg", "image/png", "image/gif"
+    );
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     public PatientProfileDto getProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -83,20 +92,42 @@ public class PatientService {
         Patient patient = patientRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found"));
 
+        // Validate file size
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds maximum allowed size of 10MB");
+        }
+
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException("File type not allowed. Accepted types: PDF, JPEG, PNG, GIF");
+        }
+
+        // Sanitize filename: remove path traversal characters, keep only safe characters
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) originalFilename = "unknown";
+        String sanitizedName = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_");
+
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
+        String fileName = UUID.randomUUID() + "_" + sanitizedName;
+        Path filePath = uploadPath.resolve(fileName).normalize();
+
+        // Ensure resolved path is still within upload directory
+        if (!filePath.startsWith(uploadPath.toAbsolutePath().normalize())) {
+            throw new IllegalArgumentException("Invalid file path");
+        }
+
         Files.copy(file.getInputStream(), filePath);
 
         MedicalReport report = MedicalReport.builder()
                 .patientId(patient.getId())
-                .fileName(file.getOriginalFilename())
+                .fileName(sanitizedName)
                 .fileUrl("/uploads/reports/" + fileName)
-                .fileType(file.getContentType())
+                .fileType(contentType)
                 .description(description)
                 .build();
 

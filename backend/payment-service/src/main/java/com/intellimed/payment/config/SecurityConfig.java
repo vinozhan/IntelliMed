@@ -19,6 +19,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/payments/webhook").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().permitAll()
             );
         return http.build();

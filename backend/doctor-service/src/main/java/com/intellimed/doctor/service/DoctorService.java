@@ -5,10 +5,11 @@ import com.intellimed.doctor.entity.Doctor;
 import com.intellimed.doctor.exception.ResourceNotFoundException;
 import com.intellimed.doctor.repository.DoctorRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,6 +74,27 @@ public class DoctorService {
             doctors = doctorRepository.findByIsVerifiedTrue();
         }
         return doctors.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public Page<DoctorDto> searchDoctors(String specialty, String name, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<Doctor> doctors;
+        if (specialty != null && !specialty.isEmpty()) {
+            doctors = doctorRepository.findBySpecialtyContainingIgnoreCaseAndIsVerifiedTrue(specialty, pageable);
+        } else if (name != null && !name.isEmpty()) {
+            doctors = doctorRepository.findByIsVerifiedTrueAndFirstNameContainingIgnoreCaseOrIsVerifiedTrueAndLastNameContainingIgnoreCase(name, name, pageable);
+        } else {
+            doctors = doctorRepository.findByIsVerifiedTrue(pageable);
+        }
+        return doctors.map(this::toDto);
+    }
+
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("totalDoctors", doctorRepository.count());
+        stats.put("verifiedCount", doctorRepository.countByIsVerifiedTrue());
+        stats.put("unverifiedCount", doctorRepository.countByIsVerifiedFalse());
+        return stats;
     }
 
     public List<String> getSpecialties() {

@@ -28,6 +28,21 @@ eureka:
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-signing-make-it-long-enough-here}
 
+spring.cloud.openfeign.circuitbreaker:
+  enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+  timelimiter:
+    instances:
+      default:
+        timeout-duration: 5s
+
 management:
   endpoints:
     web:

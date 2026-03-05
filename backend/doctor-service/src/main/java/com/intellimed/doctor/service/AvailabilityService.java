@@ -4,10 +4,12 @@ import com.intellimed.doctor.dto.AvailabilitySlotDto;
 import com.intellimed.doctor.entity.AvailabilitySlot;
 import com.intellimed.doctor.entity.Doctor;
 import com.intellimed.doctor.exception.ResourceNotFoundException;
+import com.intellimed.doctor.exception.UnauthorizedException;
 import com.intellimed.doctor.repository.AvailabilitySlotRepository;
 import com.intellimed.doctor.repository.DoctorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -21,6 +23,7 @@ public class AvailabilityService {
     private final AvailabilitySlotRepository slotRepository;
     private final DoctorRepository doctorRepository;
 
+    @Transactional
     public List<AvailabilitySlotDto> createSlot(Long userId, AvailabilitySlotDto dto) {
         Doctor doctor = doctorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
@@ -66,15 +69,16 @@ public class AvailabilityService {
         return savedSlots.stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    @Transactional
     public AvailabilitySlotDto updateSlot(Long userId, Long slotId, AvailabilitySlotDto dto) {
         Doctor doctor = doctorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
 
-        AvailabilitySlot slot = slotRepository.findById(slotId)
+        AvailabilitySlot slot = slotRepository.findByIdForUpdate(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
         if (!slot.getDoctorId().equals(doctor.getId())) {
-            throw new RuntimeException("Not authorized to update this slot");
+            throw new UnauthorizedException("Not authorized to update this slot");
         }
 
         slot.setDayOfWeek(dto.getDayOfWeek());
@@ -96,7 +100,7 @@ public class AvailabilityService {
                 .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
         if (!slot.getDoctorId().equals(doctor.getId())) {
-            throw new RuntimeException("Not authorized to delete this slot");
+            throw new UnauthorizedException("Not authorized to delete this slot");
         }
 
         slotRepository.delete(slot);
@@ -112,6 +116,40 @@ public class AvailabilityService {
         return slots.stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public AvailabilitySlotDto findSlot(Long doctorId, LocalDate date, LocalTime startTime) {
+        return slotRepository.findByDoctorIdAndSlotDateAndStartTime(doctorId, date, startTime)
+                .map(this::toDto)
+                .orElse(null);
+    }
+
+    @Transactional
+    public AvailabilitySlotDto consumeSlot(Long slotId) {
+        AvailabilitySlot slot = slotRepository.findByIdForUpdate(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        int newBookings = (slot.getCurrentBookings() != null ? slot.getCurrentBookings() : 0) + 1;
+        slot.setCurrentBookings(newBookings);
+        if (newBookings >= slot.getMaxPatients()) {
+            slot.setIsAvailable(false);
+        }
+        slot = slotRepository.save(slot);
+        return toDto(slot);
+    }
+
+    @Transactional
+    public AvailabilitySlotDto releaseSlot(Long slotId) {
+        AvailabilitySlot slot = slotRepository.findByIdForUpdate(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        int newBookings = Math.max(0, (slot.getCurrentBookings() != null ? slot.getCurrentBookings() : 0) - 1);
+        slot.setCurrentBookings(newBookings);
+        if (newBookings < slot.getMaxPatients()) {
+            slot.setIsAvailable(true);
+        }
+        slot = slotRepository.save(slot);
+        return toDto(slot);
+    }
+
     private AvailabilitySlotDto toDto(AvailabilitySlot slot) {
         return AvailabilitySlotDto.builder()
                 .id(slot.getId())
@@ -122,6 +160,7 @@ public class AvailabilityService {
                 .slotDate(slot.getSlotDate())
                 .isAvailable(slot.getIsAvailable())
                 .maxPatients(slot.getMaxPatients())
+                .currentBookings(slot.getCurrentBookings())
                 .build();
     }
 }
