@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getPatientAppointments, getDoctorAppointments, cancelAppointment, confirmAppointment, completeAppointment } from '../../api/appointmentApi';
+import { getDoctorPrescriptions } from '../../api/doctorApi';
 import { formatDate, formatTime, getStatusColor } from '../../utils/helpers';
 import { toast } from 'react-toastify';
 
@@ -9,6 +10,7 @@ export default function AppointmentList() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
+  const [prescriptionMap, setPrescriptionMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +23,17 @@ export default function AppointmentList() {
         ? await getDoctorAppointments()
         : await getPatientAppointments();
       setAppointments(data);
+
+      if (user.role === 'DOCTOR') {
+        try {
+          const { data: prescriptions } = await getDoctorPrescriptions();
+          const map = {};
+          prescriptions.forEach(p => { map[p.appointmentId] = p; });
+          setPrescriptionMap(map);
+        } catch {
+          // Prescriptions not available yet
+        }
+      }
     } catch (err) {
       toast.error('Failed to load appointments');
     } finally {
@@ -97,9 +110,14 @@ export default function AppointmentList() {
                     Complete
                   </button>
                 )}
-                {user.role === 'DOCTOR' && apt.status === 'COMPLETED' && (
+                {user.role === 'DOCTOR' && apt.status === 'COMPLETED' && !prescriptionMap[apt.id] && (
                   <button onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}`)} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-600">
                     Write Prescription
+                  </button>
+                )}
+                {user.role === 'DOCTOR' && apt.status === 'COMPLETED' && prescriptionMap[apt.id] && (
+                  <button onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}&view=true`)} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-teal-700">
+                    View Prescription
                   </button>
                 )}
                 {(apt.status === 'PENDING' || apt.status === 'CONFIRMED') && (

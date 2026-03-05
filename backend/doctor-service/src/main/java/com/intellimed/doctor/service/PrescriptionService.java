@@ -42,6 +42,26 @@ public class PrescriptionService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public PrescriptionDto updatePrescription(Long userId, Long prescriptionId, PrescriptionDto dto) {
+        Doctor doctor = doctorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+
+        Prescription prescription = prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
+
+        if (!prescription.getDoctorId().equals(doctor.getId())) {
+            throw new IllegalArgumentException("You can only update your own prescriptions");
+        }
+
+        prescription.setDiagnosis(dto.getDiagnosis());
+        prescription.setMedications(dto.getMedications());
+        prescription.setInstructions(dto.getInstructions());
+        prescription.setNotes(dto.getNotes());
+
+        prescription = prescriptionRepository.save(prescription);
+        return toDto(prescription);
+    }
+
     public List<PrescriptionDto> getPrescriptionsByDoctor(Long userId) {
         Doctor doctor = doctorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));

@@ -104,6 +104,14 @@ public class DoctorController {
         return ResponseEntity.ok(prescriptionService.createPrescription(userId, dto));
     }
 
+    @PutMapping("/prescriptions/{id}")
+    public ResponseEntity<PrescriptionDto> updatePrescription(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long id,
+            @RequestBody PrescriptionDto dto) {
+        return ResponseEntity.ok(prescriptionService.updatePrescription(userId, id, dto));
+    }
+
     @GetMapping("/prescriptions")
     public ResponseEntity<List<PrescriptionDto>> getDoctorPrescriptions(
             @RequestHeader("X-User-Id") Long userId) {

@@ -16,6 +16,7 @@ export const getDoctorAvailability = (doctorId, date) =>
   axiosInstance.get(`/api/doctors/${doctorId}/availability`, { params: { date } });
 
 export const createPrescription = (data) => axiosInstance.post('/api/doctors/prescriptions', data);
+export const updatePrescription = (id, data) => axiosInstance.put(`/api/doctors/prescriptions/${id}`, data);
 export const getDoctorPrescriptions = () => axiosInstance.get('/api/doctors/prescriptions');
 
 export const getUnverifiedDoctors = () => axiosInstance.get('/api/doctors/unverified');
