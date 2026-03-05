@@ -5,6 +5,7 @@ import com.intellimed.payment.dto.PaymentDto;
 import com.intellimed.payment.entity.Payment;
 import com.intellimed.payment.enums.PaymentStatus;
 import com.intellimed.payment.exception.ResourceNotFoundException;
+import com.intellimed.payment.exception.UnauthorizedException;
 import com.intellimed.payment.repository.PaymentRepository;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -64,9 +65,12 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentDto confirmPayment(String paymentIntentId) {
+    public PaymentDto confirmPayment(Long userId, String paymentIntentId) {
         Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        if (!payment.getPatientId().equals(userId)) {
+            throw new UnauthorizedException("You are not authorized to confirm this payment");
+        }
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setPaidAt(LocalDateTime.now());
         payment = paymentRepository.save(payment);
@@ -133,15 +137,17 @@ public class PaymentService {
         return toDto(payment, false);
     }
 
+    @Transactional
     public void handleWebhook(String paymentIntentId, String status) {
         paymentRepository.findByStripePaymentIntentId(paymentIntentId).ifPresent(payment -> {
-            if ("succeeded".equals(status)) {
+            if ("succeeded".equals(status) && payment.getStatus() == PaymentStatus.PENDING) {
                 payment.setStatus(PaymentStatus.COMPLETED);
                 payment.setPaidAt(LocalDateTime.now());
-            } else if ("payment_failed".equals(status)) {
+                paymentRepository.save(payment);
+            } else if ("payment_failed".equals(status) && payment.getStatus() == PaymentStatus.PENDING) {
                 payment.setStatus(PaymentStatus.FAILED);
+                paymentRepository.save(payment);
             }
-            paymentRepository.save(payment);
         });
     }
 

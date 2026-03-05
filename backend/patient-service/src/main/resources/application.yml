@@ -30,12 +30,12 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-signing-make-it-long-enough-here}
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 admin:
-  email: ${ADMIN_EMAIL:admin@intellimed.com}
-  password: ${ADMIN_PASSWORD:Admin@123}
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
 
 management:
   endpoints:

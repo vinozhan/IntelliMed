@@ -154,8 +154,13 @@ public class DoctorController {
     @GetMapping("/patients/{patientId}/prescriptions")
     public ResponseEntity<?> getPatientPrescriptions(
             @PathVariable Long patientId,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role,
             @RequestParam(required = false) Integer page,
             @RequestParam(defaultValue = "20") int size) {
+        if (!userId.equals(patientId) && !"DOCTOR".equals(role) && !"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
         if (page != null) {
             return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatient(patientId, page, size));
         }

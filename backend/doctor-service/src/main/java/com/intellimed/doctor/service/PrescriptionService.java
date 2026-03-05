@@ -66,6 +66,7 @@ public class PrescriptionService {
                 .map(this::toDto);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public PrescriptionDto updatePrescription(Long userId, Long prescriptionId, PrescriptionDto dto) {
         Doctor doctor = doctorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));

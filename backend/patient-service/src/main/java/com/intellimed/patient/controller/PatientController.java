@@ -31,7 +31,13 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PatientProfileDto> getPatientById(@PathVariable Long id) {
+    public ResponseEntity<PatientProfileDto> getPatientById(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        if (!userId.equals(id) && !"DOCTOR".equals(role) && !"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
         return ResponseEntity.ok(patientService.getPatientById(id));
     }
 
@@ -49,7 +55,13 @@ public class PatientController {
     }
 
     @GetMapping("/{patientId}/reports")
-    public ResponseEntity<List<MedicalReport>> getReportsByPatientId(@PathVariable Long patientId) {
+    public ResponseEntity<List<MedicalReport>> getReportsByPatientId(
+            @PathVariable Long patientId,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        if (!userId.equals(patientId) && !"DOCTOR".equals(role) && !"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
         return ResponseEntity.ok(patientService.getReportsByPatientId(patientId));
     }
 }

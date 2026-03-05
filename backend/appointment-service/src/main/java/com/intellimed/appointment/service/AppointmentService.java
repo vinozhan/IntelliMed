@@ -9,6 +9,7 @@ import com.intellimed.appointment.dto.SendNotificationRequest;
 import com.intellimed.appointment.entity.Appointment;
 import com.intellimed.appointment.enums.AppointmentStatus;
 import com.intellimed.appointment.exception.ResourceNotFoundException;
+import com.intellimed.appointment.exception.UnauthorizedException;
 import com.intellimed.appointment.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,7 +154,7 @@ public class AppointmentService {
         // Ownership check: only the patient who booked or the assigned doctor can update
         if (!"ADMIN".equals(userRole)) {
             if (!appointment.getPatientId().equals(userId) && !appointment.getDoctorUserId().equals(userId)) {
-                throw new RuntimeException("You are not authorized to update this appointment");
+                throw new UnauthorizedException("You are not authorized to update this appointment");
             }
         }
 
@@ -162,11 +163,50 @@ public class AppointmentService {
             throw new RuntimeException("Only PENDING appointments can be rescheduled");
         }
 
+        boolean timeChanged = (dto.getAppointmentDate() != null && !dto.getAppointmentDate().equals(appointment.getAppointmentDate()))
+                || (dto.getStartTime() != null && !dto.getStartTime().equals(appointment.getStartTime()));
+
+        // Release old slot and consume new one if time changed
+        if (timeChanged) {
+            if (appointment.getSlotId() != null) {
+                try {
+                    doctorServiceClient.releaseSlot(appointment.getSlotId());
+                } catch (Exception e) {
+                    log.warn("Failed to release old slot {}: {}", appointment.getSlotId(), e.getMessage());
+                }
+                appointment.setSlotId(null);
+            }
+        }
+
         if (dto.getAppointmentDate() != null) appointment.setAppointmentDate(dto.getAppointmentDate());
         if (dto.getStartTime() != null) appointment.setStartTime(dto.getStartTime());
         if (dto.getEndTime() != null) appointment.setEndTime(dto.getEndTime());
         if (dto.getReason() != null) appointment.setReason(dto.getReason());
         if (dto.getNotes() != null) appointment.setNotes(dto.getNotes());
+
+        // Try to consume new slot if time changed
+        if (timeChanged) {
+            try {
+                Map<String, Object> slot = doctorServiceClient.findSlot(
+                        appointment.getDoctorId(),
+                        appointment.getAppointmentDate().toString(),
+                        appointment.getStartTime().toString());
+                if (slot != null && slot.get("id") != null) {
+                    Long slotId = ((Number) slot.get("id")).longValue();
+                    Boolean isAvailable = (Boolean) slot.get("isAvailable");
+                    if (Boolean.FALSE.equals(isAvailable)) {
+                        throw new RuntimeException("The new time slot is no longer available");
+                    }
+                    doctorServiceClient.consumeSlot(slotId);
+                    appointment.setSlotId(slotId);
+                }
+            } catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().contains("no longer available")) {
+                    throw e;
+                }
+                log.warn("Slot consumption skipped during reschedule: {}", e.getMessage());
+            }
+        }
 
         appointment = appointmentRepository.save(appointment);
         return toDto(appointment);
@@ -180,7 +220,7 @@ public class AppointmentService {
         // Ownership check
         if (!"ADMIN".equals(userRole)) {
             if (!appointment.getPatientId().equals(userId) && !appointment.getDoctorUserId().equals(userId)) {
-                throw new RuntimeException("You are not authorized to cancel this appointment");
+                throw new UnauthorizedException("You are not authorized to cancel this appointment");
             }
         }
 
@@ -213,7 +253,7 @@ public class AppointmentService {
 
         // Only the assigned doctor can confirm
         if (!appointment.getDoctorUserId().equals(userId)) {
-            throw new RuntimeException("Only the assigned doctor can confirm this appointment");
+            throw new UnauthorizedException("Only the assigned doctor can confirm this appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.PENDING) {
@@ -232,7 +272,7 @@ public class AppointmentService {
 
         // Only the assigned doctor can reject
         if (!appointment.getDoctorUserId().equals(userId)) {
-            throw new RuntimeException("Only the assigned doctor can reject this appointment");
+            throw new UnauthorizedException("Only the assigned doctor can reject this appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.PENDING) {
@@ -262,7 +302,7 @@ public class AppointmentService {
 
         // Only the assigned doctor can complete
         if (!appointment.getDoctorUserId().equals(userId)) {
-            throw new RuntimeException("Only the assigned doctor can complete this appointment");
+            throw new UnauthorizedException("Only the assigned doctor can complete this appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {

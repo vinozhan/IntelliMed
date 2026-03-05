@@ -34,13 +34,13 @@ public class DoctorServiceClientFallback implements DoctorServiceClient {
 
     @Override
     public Map<String, Object> consumeSlot(Long slotId) {
-        log.warn("Doctor service unavailable — slot consumption skipped for slotId: {}", slotId);
-        return null;
+        log.error("Doctor service unavailable — cannot consume slot {}", slotId);
+        throw new RuntimeException("Doctor service unavailable — slot consumption failed for slotId: " + slotId);
     }
 
     @Override
     public Map<String, Object> releaseSlot(Long slotId) {
-        log.warn("Doctor service unavailable — slot release skipped for slotId: {}", slotId);
-        return null;
+        log.warn("Doctor service unavailable — slot release deferred for slotId: {}", slotId);
+        throw new RuntimeException("Doctor service unavailable — slot release failed for slotId: " + slotId);
     }
 }

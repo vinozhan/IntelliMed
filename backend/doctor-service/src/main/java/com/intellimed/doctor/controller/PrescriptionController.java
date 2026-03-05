@@ -16,7 +16,13 @@ public class PrescriptionController {
     private final PrescriptionService prescriptionService;
 
     @GetMapping("/{patientId}/prescriptions")
-    public ResponseEntity<List<PrescriptionDto>> getPatientPrescriptions(@PathVariable Long patientId) {
+    public ResponseEntity<List<PrescriptionDto>> getPatientPrescriptions(
+            @PathVariable Long patientId,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        if (!userId.equals(patientId) && !"DOCTOR".equals(role) && !"ADMIN".equals(role)) {
+            return ResponseEntity.status(403).build();
+        }
         return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatient(patientId));
     }
 }

@@ -75,6 +75,12 @@ public class TelemedicineService {
         return toDto(session);
     }
 
+    public VideoSessionDto getSessionById(Long id) {
+        VideoSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+        return toDto(session);
+    }
+
     public JoinInfoDto getJoinInfo(Long id) {
         VideoSession session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));

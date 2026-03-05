@@ -35,8 +35,10 @@ public class PaymentController {
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<PaymentDto> confirmPayment(@RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(paymentService.confirmPayment(body.get("paymentIntentId")));
+    public ResponseEntity<PaymentDto> confirmPayment(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(paymentService.confirmPayment(userId, body.get("paymentIntentId")));
     }
 
     @GetMapping("/appointment/{id}")
