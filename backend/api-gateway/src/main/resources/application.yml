@@ -14,7 +14,7 @@ spring:
             - id: patient-service
               uri: lb://patient-service
               predicates:
-                - Path=/api/auth/**, /api/patients/**, /api/admin/users/**
+                - Path=/api/auth/**, /api/patients/**, /api/admin/**
             - id: doctor-service
               uri: lb://doctor-service
               predicates:
