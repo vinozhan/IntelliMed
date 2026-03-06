@@ -5,6 +5,11 @@ import { getSession, createSession, startSession, endSession } from '../../api/t
 import { getAppointment, completeAppointment } from '../../api/appointmentApi';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 import { toast } from 'react-toastify';
+import WaitingRoom from './WaitingRoom';
+import Card from '../ui/Card';
+import Button from '../ui/Button';
+import ErrorState from '../ui/ErrorState';
+import { Phone, PhoneOff, Video, FileText, CheckCircle } from 'lucide-react';
 
 export default function JitsiMeetingRoom() {
   const { appointmentId } = useParams();
@@ -13,6 +18,8 @@ export default function JitsiMeetingRoom() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [callEnded, setCallEnded] = useState(false);
+  const [error, setError] = useState(false);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -45,7 +52,6 @@ export default function JitsiMeetingRoom() {
         }
 
         setSession(sessionData);
-
         if (user.role === 'DOCTOR' && sessionData.status === 'WAITING') {
           await startSession(sessionData.id);
         }
@@ -54,7 +60,7 @@ export default function JitsiMeetingRoom() {
         if (status === 400 || status === 409) {
           setStatusMessage('This consultation session has already been completed.');
         } else {
-          setStatusMessage('Unable to connect to the video session. Please try again.');
+          setError(true);
         }
       } finally {
         setLoading(false);
@@ -69,29 +75,95 @@ export default function JitsiMeetingRoom() {
         await endSession(session.id);
         await completeAppointment(appointmentId);
         toast.success('Consultation completed');
-      } catch (err) {
-        console.error(err);
-      }
+      } catch { /* end session cleanup */ }
     }
-    navigate(-1);
+    setCallEnded(true);
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-primary-600/20 rounded-2xl flex items-center justify-center">
+            <Video size={28} className="text-primary-400 animate-pulse" />
+          </div>
+          <p className="text-slate-400 text-sm">Connecting to video session...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!session) return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <p className="text-gray-600 text-lg mb-4">{statusMessage || 'Session not available'}</p>
-      <button onClick={() => navigate(-1)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Go Back</button>
-    </div>
-  );
+  if (error) {
+    return (
+      <div className="min-h-screen bg-surface-secondary flex items-center justify-center p-4">
+        <ErrorState
+          title="Connection Failed"
+          message="Unable to connect to the video session. Please try again."
+          onRetry={() => { initialized.current = false; setError(false); setLoading(true); }}
+        />
+      </div>
+    );
+  }
 
+  if (!session) {
+    return (
+      <WaitingRoom
+        message={statusMessage}
+        appointmentId={appointmentId}
+        onBack={() => navigate(-1)}
+      />
+    );
+  }
+
+  // Post-call summary
+  if (callEnded) {
+    return (
+      <div className="min-h-screen bg-surface-secondary flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-accent-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <CheckCircle size={28} className="text-accent-600" />
+          </div>
+          <h2 className="text-xl font-bold font-heading text-slate-800 mb-2">Consultation Complete</h2>
+          <p className="text-sm text-slate-500 mb-6">
+            Appointment <span className="font-mono">#{appointmentId}</span> has been completed.
+          </p>
+          <div className="flex flex-col gap-2">
+            {user.role === 'DOCTOR' && (
+              <Button
+                icon={FileText}
+                onClick={() => navigate(`/doctor/prescriptions?appointmentId=${appointmentId}&patientId=${session.patientId}`)}
+              >
+                Write Prescription
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => navigate(user.role === 'DOCTOR' ? '/doctor/appointments' : '/patient/appointments')}
+            >
+              Back to Appointments
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // In-call
   return (
-    <div className="min-h-screen bg-gray-900">
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
-        <h2 className="text-white font-semibold">Video Consultation</h2>
-        <button onClick={handleEnd} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+    <div className="min-h-screen bg-slate-900">
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-800/90 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-accent-500/20 rounded-lg flex items-center justify-center">
+            <Phone size={16} className="text-accent-400" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-white">Video Consultation</h2>
+            <p className="text-xs text-slate-400">Appointment #{appointmentId}</p>
+          </div>
+        </div>
+        <Button variant="danger" size="sm" icon={PhoneOff} onClick={handleEnd}>
           End Call
-        </button>
+        </Button>
       </div>
       <JitsiMeeting
         domain="meet.jit.si"

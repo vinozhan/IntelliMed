@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
 import { getDoctorProfile, getDoctorAvailability, createAvailability, deleteAvailability } from '../../api/doctorApi';
 import { toast } from 'react-toastify';
-import { Trash2 } from 'lucide-react';
+import PageHeader from '../ui/PageHeader';
+import Card from '../ui/Card';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
+import Button from '../ui/Button';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import EmptyState from '../ui/EmptyState';
+import Skeleton from '../ui/Skeleton';
+import { Trash2, Clock, Plus } from 'lucide-react';
 
 export default function DoctorAvailability() {
   const [slots, setSlots] = useState([]);
@@ -11,6 +18,7 @@ export default function DoctorAvailability() {
   const [form, setForm] = useState({
     slotDate: '', startTime: '', endTime: '', maxPatients: 1, slotDurationMinutes: 30,
   });
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,11 +27,8 @@ export default function DoctorAvailability() {
         setDoctorId(profile.id);
         const { data } = await getDoctorAvailability(profile.id);
         setSlots(data);
-      } catch (err) {
-        toast.error('Please create your doctor profile first');
-      } finally {
-        setLoading(false);
-      }
+      } catch { toast.error('Please create your doctor profile first'); }
+      finally { setLoading(false); }
     };
     fetchData();
   }, []);
@@ -36,82 +41,104 @@ export default function DoctorAvailability() {
       const { data } = await getDoctorAvailability(doctorId);
       setSlots(data);
       setForm({ slotDate: '', startTime: '', endTime: '', maxPatients: 1, slotDurationMinutes: 30 });
-    } catch (err) {
-      toast.error('Failed to add slot');
-    }
+    } catch { toast.error('Failed to add slot'); }
   };
 
-  const handleDelete = async (slotId) => {
+  const handleDelete = async () => {
     try {
-      await deleteAvailability(slotId);
-      setSlots(slots.filter((s) => s.id !== slotId));
+      await deleteAvailability(deleteId);
+      setSlots(slots.filter((s) => s.id !== deleteId));
       toast.success('Slot removed');
-    } catch (err) {
-      toast.error('Failed to remove slot');
-    }
+    } catch { toast.error('Failed to remove slot'); }
+    finally { setDeleteId(null); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-4">
+        <Skeleton variant="rect" height={40} width="40%" />
+        <Skeleton variant="rect" height={200} />
+        <Skeleton variant="rect" height={200} />
+      </div>
+    );
+  }
+
+  // Group slots by date
+  const grouped = slots.reduce((acc, slot) => {
+    const date = slot.slotDate;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(slot);
+    return acc;
+  }, {});
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Manage Availability</h1>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="Manage Availability" subtitle="Configure your appointment slots" />
 
-      <form onSubmit={handleAdd} className="bg-white rounded-xl shadow p-6 mb-6 space-y-4">
-        <h2 className="text-lg font-semibold">Add New Slot</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input type="date" required className="w-full px-3 py-2 border rounded-lg" value={form.slotDate} onChange={(e) => setForm({ ...form, slotDate: e.target.value })} min={new Date().toISOString().split('T')[0]} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-            <input type="time" required className="w-full px-3 py-2 border rounded-lg" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-            <input type="time" required className="w-full px-3 py-2 border rounded-lg" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Slot Duration</label>
-            <select className="w-full px-3 py-2 border rounded-lg" value={form.slotDurationMinutes} onChange={(e) => setForm({ ...form, slotDurationMinutes: parseInt(e.target.value) })}>
+      <form onSubmit={handleAdd}>
+        <Card className="mb-6">
+          <h2 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <Plus size={16} /> Add New Slot
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <Input label="Date" type="date" required value={form.slotDate} onChange={(e) => setForm({ ...form, slotDate: e.target.value })} min={new Date().toISOString().split('T')[0]} />
+            <Input label="Start Time" type="time" required value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
+            <Input label="End Time" type="time" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
+            <Select label="Duration" value={form.slotDurationMinutes} onChange={(e) => setForm({ ...form, slotDurationMinutes: parseInt(e.target.value) })}>
               <option value={15}>15 min</option>
               <option value={20}>20 min</option>
               <option value={30}>30 min</option>
               <option value={45}>45 min</option>
               <option value={60}>60 min</option>
-            </select>
+            </Select>
+            <Input label="Max Patients" type="number" min="1" value={form.maxPatients} onChange={(e) => setForm({ ...form, maxPatients: parseInt(e.target.value) })} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Patients</label>
-            <input type="number" min="1" className="w-full px-3 py-2 border rounded-lg" value={form.maxPatients} onChange={(e) => setForm({ ...form, maxPatients: parseInt(e.target.value) })} />
-          </div>
-        </div>
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-          Add Slot
-        </button>
+          <Button type="submit" icon={Plus}>Add Slot</Button>
+        </Card>
       </form>
 
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Current Slots</h2>
-        {slots.length === 0 ? (
-          <p className="text-gray-500">No availability slots configured</p>
+      <Card>
+        <h2 className="text-base font-semibold text-slate-800 mb-4">Current Slots</h2>
+        {Object.keys(grouped).length === 0 ? (
+          <EmptyState icon={Clock} title="No availability slots" description="Add slots so patients can book appointments" />
         ) : (
-          <div className="space-y-3">
-            {slots.map((slot) => (
-              <div key={slot.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <p className="font-medium">{slot.slotDate}</p>
-                  <p className="text-sm text-gray-500">{slot.startTime} - {slot.endTime} | Max: {slot.maxPatients}</p>
+          <div className="space-y-6">
+            {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([date, dateSlots]) => (
+              <div key={date}>
+                <h3 className="text-sm font-semibold text-slate-600 mb-2">{new Date(date + 'T00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                <div className="space-y-2">
+                  {dateSlots.map((slot) => (
+                    <div key={slot.id} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                          <Clock size={14} className="text-primary-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{slot.startTime} - {slot.endTime}</p>
+                          <p className="text-xs text-slate-500">Max: {slot.maxPatients} patients</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="ghost" className="!text-danger-500" onClick={() => setDeleteId(slot.id)}>
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <button onClick={() => handleDelete(slot.id)} className="text-red-600 hover:text-red-700">
-                  <Trash2 size={20} />
-                </button>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Delete Slot"
+        message="Are you sure you want to remove this availability slot?"
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

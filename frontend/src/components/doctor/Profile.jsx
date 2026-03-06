@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { getDoctorProfile, createDoctorProfile, updateDoctorProfile, getSpecialties } from '../../api/doctorApi';
 import { toast } from 'react-toastify';
+import useFormValidation from '../../hooks/useFormValidation';
+import PageHeader from '../ui/PageHeader';
+import Card from '../ui/Card';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
+import Button from '../ui/Button';
+import Badge from '../ui/Badge';
+import Skeleton from '../ui/Skeleton';
+import { BadgeCheck, Clock } from 'lucide-react';
 
 export default function DoctorProfile() {
   const [profile, setProfile] = useState({
@@ -11,24 +20,32 @@ export default function DoctorProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const { errors, validateAll, clearError } = useFormValidation({
+    specialty: [{ required: true, message: 'Specialty is required' }],
+    qualification: [{ required: true, message: 'Qualification is required' }],
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [specRes] = await Promise.all([getSpecialties()]);
+        const specRes = await getSpecialties();
         setSpecialties(specRes.data);
         const { data } = await getDoctorProfile();
         setProfile(data);
-      } catch (err) {
-        setIsNew(true);
-      } finally {
-        setLoading(false);
-      }
+      } catch { setIsNew(true); }
+      finally { setLoading(false); }
     };
     fetchData();
   }, []);
 
+  const handleChange = (field, value) => {
+    setProfile({ ...profile, [field]: value });
+    clearError(field);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!validateAll(profile)) return;
     setSaving(true);
     try {
       if (isNew) {
@@ -41,49 +58,56 @@ export default function DoctorProfile() {
         setProfile(data);
         toast.success('Profile updated!');
       }
-    } catch (err) {
-      toast.error('Failed to save profile');
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error('Failed to save profile'); }
+    finally { setSaving(false); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <Skeleton variant="rect" height={40} width="40%" />
+        <Skeleton variant="rect" height={400} />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">
-        {isNew ? 'Create Doctor Profile' : 'Edit Doctor Profile'}
-      </h1>
-      <form onSubmit={handleSave} className="bg-white rounded-xl shadow p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Specialty</label>
-          <select className="w-full px-4 py-2 border rounded-lg" value={profile.specialty || ''} onChange={(e) => setProfile({ ...profile, specialty: e.target.value })} required>
+    <div className="max-w-2xl mx-auto">
+      <PageHeader
+        title={isNew ? 'Create Doctor Profile' : 'Edit Doctor Profile'}
+        subtitle={isNew ? 'Set up your professional profile' : 'Update your professional details'}
+      />
+
+      {!isNew && (
+        <div className="flex items-center gap-2 mb-6">
+          {profile.isVerified ? (
+            <Badge color="accent" variant="soft"><BadgeCheck size={12} className="inline" /> Verified</Badge>
+          ) : (
+            <Badge color="warm" variant="soft"><Clock size={12} className="inline" /> Pending Verification</Badge>
+          )}
+        </div>
+      )}
+
+      <form onSubmit={handleSave}>
+        <Card className="space-y-5">
+          <Select label="Specialty" value={profile.specialty || ''} onChange={(e) => handleChange('specialty', e.target.value)} error={errors.specialty} required>
             <option value="">Select Specialty</option>
-            {specialties.map((s) => (<option key={s} value={s}>{s}</option>))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Qualification</label>
-          <input type="text" className="w-full px-4 py-2 border rounded-lg" value={profile.qualification || ''} onChange={(e) => setProfile({ ...profile, qualification: e.target.value })} required />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
-            <input type="number" className="w-full px-4 py-2 border rounded-lg" value={profile.experienceYears || ''} onChange={(e) => setProfile({ ...profile, experienceYears: parseInt(e.target.value) || '' })} />
+            {specialties.map((s) => <option key={s} value={s}>{s}</option>)}
+          </Select>
+
+          <Input label="Qualification" value={profile.qualification || ''} onChange={(e) => handleChange('qualification', e.target.value)} error={errors.qualification} required placeholder="e.g., MBBS, MD" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Experience (years)" type="number" value={profile.experienceYears || ''} onChange={(e) => handleChange('experienceYears', parseInt(e.target.value) || '')} />
+            <Input label="Consultation Fee ($)" type="number" step="0.01" value={profile.consultationFee || ''} onChange={(e) => handleChange('consultationFee', parseFloat(e.target.value) || '')} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Consultation Fee ($)</label>
-            <input type="number" step="0.01" className="w-full px-4 py-2 border rounded-lg" value={profile.consultationFee || ''} onChange={(e) => setProfile({ ...profile, consultationFee: parseFloat(e.target.value) || '' })} />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hospital</label>
-          <input type="text" className="w-full px-4 py-2 border rounded-lg" value={profile.hospital || ''} onChange={(e) => setProfile({ ...profile, hospital: e.target.value })} />
-        </div>
-        <button type="submit" disabled={saving} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-          {saving ? 'Saving...' : isNew ? 'Create Profile' : 'Update Profile'}
-        </button>
+
+          <Input label="Hospital" value={profile.hospital || ''} onChange={(e) => handleChange('hospital', e.target.value)} placeholder="e.g., City General Hospital" />
+
+          <Button type="submit" loading={saving} className="w-full" size="lg">
+            {isNew ? 'Create Profile' : 'Update Profile'}
+          </Button>
+        </Card>
       </form>
     </div>
   );

@@ -1,74 +1,75 @@
 import { useState, useEffect } from 'react';
-import { getPatientPayments, refundPayment } from '../../api/paymentApi';
-import { formatDateTime, getStatusColor } from '../../utils/helpers';
+import { getAllPaymentsAdmin } from '../../api/adminApi';
+import { refundPayment } from '../../api/paymentApi';
+import { formatDateTime } from '../../utils/helpers';
 import { toast } from 'react-toastify';
+import PageHeader from '../ui/PageHeader';
+import DataTable from '../ui/DataTable';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { CreditCard } from 'lucide-react';
 
 export default function Transactions() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refundId, setRefundId] = useState(null);
+  const [refunding, setRefunding] = useState(false);
 
-  useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const { data } = await getPatientPayments();
-        setPayments(data);
-      } catch (err) {
-        toast.error('Failed to load transactions');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPayments();
-  }, []);
+  useEffect(() => { fetchPayments(); }, []);
 
-  const handleRefund = async (id) => {
+  const fetchPayments = async () => {
     try {
-      await refundPayment(id);
-      toast.success('Refund processed');
-      const { data } = await getPatientPayments();
-      setPayments(data);
-    } catch (err) {
-      toast.error('Failed to process refund');
-    }
+      const { data } = await getAllPaymentsAdmin();
+      setPayments(Array.isArray(data) ? data : data.content || []);
+    } catch { toast.error('Failed to load transactions'); }
+    finally { setLoading(false); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  const handleRefund = async () => {
+    setRefunding(true);
+    try {
+      await refundPayment(refundId);
+      toast.success('Refund processed');
+      fetchPayments();
+    } catch { toast.error('Failed to process refund'); }
+    finally { setRefunding(false); setRefundId(null); }
+  };
+
+  const columns = [
+    { key: 'id', label: 'ID', render: (row) => <span className="font-mono text-xs">#{row.id}</span> },
+    { key: 'appointmentId', label: 'Appointment', render: (row) => <span className="font-mono text-xs">#{row.appointmentId}</span> },
+    { key: 'amount', label: 'Amount', render: (row) => <span className="font-mono font-semibold">${row.amount}</span> },
+    { key: 'status', label: 'Status', render: (row) => <Badge status={row.status} dot /> },
+    { key: 'paidAt', label: 'Date', render: (row) => <span className="text-slate-500 text-xs">{formatDateTime(row.paidAt)}</span> },
+    {
+      key: 'actions', label: 'Actions', render: (row) =>
+        row.status === 'COMPLETED' ? (
+          <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); setRefundId(row.id); }}>Refund</Button>
+        ) : null,
+    },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Transactions</h1>
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Appointment</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {payments.map((p) => (
-              <tr key={p.id}>
-                <td className="px-6 py-4 text-sm">{p.id}</td>
-                <td className="px-6 py-4 text-sm">#{p.appointmentId}</td>
-                <td className="px-6 py-4 text-sm font-medium">${p.amount}</td>
-                <td className="px-6 py-4 text-sm">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(p.status)}`}>{p.status}</span>
-                </td>
-                <td className="px-6 py-4 text-sm">{formatDateTime(p.paidAt)}</td>
-                <td className="px-6 py-4 text-sm">
-                  {p.status === 'COMPLETED' && (
-                    <button onClick={() => handleRefund(p.id)} className="text-red-600 hover:text-red-700 text-xs">Refund</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="max-w-6xl mx-auto">
+      <PageHeader title="Transactions" subtitle="View and manage platform payments" />
+      <DataTable
+        columns={columns}
+        data={payments}
+        loading={loading}
+        emptyTitle="No transactions found"
+        emptyIcon={CreditCard}
+      />
+      <ConfirmDialog
+        open={refundId !== null}
+        onClose={() => setRefundId(null)}
+        onConfirm={handleRefund}
+        loading={refunding}
+        title="Process Refund"
+        message="Are you sure you want to refund this payment? This action cannot be undone."
+        confirmLabel="Refund"
+        variant="danger"
+      />
     </div>
   );
 }
