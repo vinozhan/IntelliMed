@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import NotificationPanel from '../common/NotificationPanel';
+import Avatar from '../ui/Avatar';
 
 export default function TopBar({ onMenuClick }) {
   const { user, logout } = useAuth();
@@ -49,11 +50,7 @@ export default function TopBar({ onMenuClick }) {
             aria-expanded={dropdownOpen}
             aria-haspopup="true"
           >
-            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold text-primary-700">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
-            </div>
+            <Avatar name={`${user?.firstName || ''} ${user?.lastName || ''}`} size="sm" />
             <span className="hidden sm:block text-sm font-medium text-slate-700">
               {user?.firstName}
             </span>

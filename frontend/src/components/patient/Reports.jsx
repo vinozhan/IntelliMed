@@ -7,6 +7,7 @@ import Card from '../ui/Card';
 import Input from '../ui/Input';
 import EmptyState from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/Skeleton';
+import EmptyInbox from '../illustrations/EmptyInbox';
 import { FileText, CloudUpload } from 'lucide-react';
 
 export default function Reports() {
@@ -75,7 +76,7 @@ export default function Reports() {
         {loading ? (
           <div className="space-y-3">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
         ) : reports.length === 0 ? (
-          <EmptyState icon={FileText} title="No reports uploaded" description="Upload your medical reports for easy access" />
+          <EmptyState illustration={<EmptyInbox />} title="No reports uploaded" description="Upload your medical reports for easy access" />
         ) : (
           <div className="space-y-3">
             {reports.map((report) => (

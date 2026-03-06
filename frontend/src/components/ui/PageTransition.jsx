@@ -1,3 +1,4 @@
-export default function PageTransition({ children }) {
-  return <div className="animate-fade-in">{children}</div>;
+export default function PageTransition({ children, variant = 'fade' }) {
+  const className = variant === 'slide-up' ? 'animate-slide-up' : 'animate-fade-in';
+  return <div className={className}>{children}</div>;
 }

@@ -7,6 +7,7 @@ import PageHeader from '../ui/PageHeader';
 import Card from '../ui/Card';
 import EmptyState from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/Skeleton';
+import EmptyInbox from '../illustrations/EmptyInbox';
 import { Pill, FileText } from 'lucide-react';
 
 export default function PatientPrescriptions() {
@@ -29,7 +30,7 @@ export default function PatientPrescriptions() {
         <div className="space-y-4">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
       ) : prescriptions.length === 0 ? (
         <Card>
-          <EmptyState icon={Pill} title="No prescriptions" description="Prescriptions from your consultations will appear here" />
+          <EmptyState illustration={<EmptyInbox />} title="No prescriptions" description="Prescriptions from your consultations will appear here" />
         </Card>
       ) : (
         <div className="space-y-4">

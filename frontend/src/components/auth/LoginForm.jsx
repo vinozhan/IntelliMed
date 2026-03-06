@@ -46,14 +46,14 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 p-12 flex-col justify-between">
-        <div className="flex items-center gap-2.5">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 p-12 flex-col justify-between relative overflow-hidden">
+        <div className="flex items-center gap-2.5 relative z-10">
           <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
             <Heart className="text-white" size={20} />
           </div>
           <span className="text-xl font-bold font-heading text-white">IntelliMed</span>
         </div>
-        <div>
+        <div className="relative z-10">
           <h1 className="text-4xl font-bold font-heading text-white leading-tight mb-4">
             Your health journey<br />starts here.
           </h1>
@@ -61,7 +61,14 @@ export default function LoginForm() {
             AI-powered healthcare platform connecting patients with verified doctors for seamless consultations.
           </p>
         </div>
-        <p className="text-primary-300 text-sm">&copy; {new Date().getFullYear()} IntelliMed</p>
+        <img
+          src="/images/auth-illustration.png"
+          alt=""
+          className="absolute bottom-0 right-0 w-3/4 max-w-sm object-contain opacity-20"
+          loading="lazy"
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+        <p className="text-primary-300 text-sm relative z-10">&copy; {new Date().getFullYear()} IntelliMed</p>
       </div>
 
       {/* Right panel */}

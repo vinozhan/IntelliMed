@@ -9,6 +9,8 @@ import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/Skeleton';
 import PageHeader from '../ui/PageHeader';
+import Avatar from '../ui/Avatar';
+import EmptySearch from '../illustrations/EmptySearch';
 import { Stethoscope, MapPin, Award, BadgeCheck } from 'lucide-react';
 
 export default function DoctorSearch() {
@@ -66,7 +68,7 @@ export default function DoctorSearch() {
         </div>
       ) : doctors.length === 0 ? (
         <Card>
-          <EmptyState icon={Stethoscope} title="No doctors found" description="Try adjusting your search filters" />
+          <EmptyState illustration={<EmptySearch />} title="No doctors found" description="Try adjusting your search filters" />
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -74,9 +76,11 @@ export default function DoctorSearch() {
             <Card key={doc.id} variant="interactive">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
-                    <Stethoscope size={22} className="text-primary-600" />
-                  </div>
+                  <Avatar
+                    src={`/images/avatar-doctor-${(doc.id % 8) + 1}.png`}
+                    name={`${doc.firstName || 'Dr'} ${doc.lastName || ''}`}
+                    size="lg"
+                  />
                   <div>
                     <h3 className="text-base font-semibold text-slate-800">Dr. {doc.firstName || 'Doctor'} {doc.lastName || ''}</h3>
                     <p className="text-sm text-primary-600 font-medium">{doc.specialty}</p>

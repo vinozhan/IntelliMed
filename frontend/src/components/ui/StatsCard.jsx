@@ -1,3 +1,26 @@
+import { useState, useEffect, useRef } from 'react';
+
+function useCountUp(target, duration = 600) {
+  const [count, setCount] = useState(0);
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    if (hasRun.current || target == null || isNaN(target)) return;
+    hasRun.current = true;
+    const num = Number(target);
+    if (num === 0) return;
+    const start = performance.now();
+    const step = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      setCount(Math.round(progress * num));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+
+  return count;
+}
+
 export default function StatsCard({ icon, label, value, trend, color = 'primary', loading = false }) {
   const colorMap = {
     primary: 'bg-primary-100 text-primary-600',
@@ -7,6 +30,10 @@ export default function StatsCard({ icon, label, value, trend, color = 'primary'
     purple: 'bg-purple-100 text-purple-600',
     blue: 'bg-blue-100 text-blue-600',
   };
+
+  const numericValue = typeof value === 'number' ? value : parseInt(value, 10);
+  const isNumeric = !loading && !isNaN(numericValue) && typeof value !== 'string';
+  const animatedValue = useCountUp(isNumeric ? numericValue : null);
 
   const IconComponent = icon;
 
@@ -22,7 +49,9 @@ export default function StatsCard({ icon, label, value, trend, color = 'primary'
         <div className="h-8 w-20 bg-slate-200 animate-pulse rounded-md" />
       ) : (
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold font-heading text-slate-800">{value}</span>
+          <span className="text-2xl font-bold font-heading text-slate-800">
+            {isNumeric ? animatedValue : value}
+          </span>
           {trend && (
             <span className={`text-xs font-medium ${trend > 0 ? 'text-accent-600' : 'text-danger-600'}`}>
               {trend > 0 ? '+' : ''}{trend}%

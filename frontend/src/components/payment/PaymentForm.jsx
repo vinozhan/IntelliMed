@@ -22,6 +22,7 @@ function CheckoutForm({ appointmentId }) {
   const [clientSecret, setClientSecret] = useState('');
   const [processing, setProcessing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -53,7 +54,8 @@ function CheckoutForm({ appointmentId }) {
       else if (paymentIntent.status === 'succeeded') {
         await confirmPayment(paymentIntent.id);
         toast.success('Payment successful!');
-        navigate('/patient/dashboard');
+        setSuccess(true);
+        setTimeout(() => navigate('/patient/dashboard'), 2500);
       }
     } catch { toast.error('Payment failed'); }
     finally { setProcessing(false); }
@@ -61,6 +63,21 @@ function CheckoutForm({ appointmentId }) {
 
   if (loading) {
     return <div className="space-y-4"><Skeleton variant="rect" height={80} /><Skeleton variant="rect" height={120} /></div>;
+  }
+
+  if (success) {
+    return (
+      <div className="text-center py-6 animate-fade-in">
+        <img
+          src="/images/payment-success.png"
+          alt="Payment successful"
+          className="w-48 h-auto mx-auto mb-4"
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+        <h3 className="text-xl font-bold font-heading text-accent-600 mb-2">Payment Successful!</h3>
+        <p className="text-sm text-slate-500">Redirecting to your dashboard...</p>
+      </div>
+    );
   }
 
   return (

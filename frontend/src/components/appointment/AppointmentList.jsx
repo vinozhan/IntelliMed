@@ -16,6 +16,8 @@ import Tabs from '../ui/Tabs';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EmptyState from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/Skeleton';
+import Avatar from '../ui/Avatar';
+import EmptyCalendar from '../illustrations/EmptyCalendar';
 import { Calendar, Video, ClipboardList } from 'lucide-react';
 
 export default function AppointmentList() {
@@ -92,7 +94,7 @@ export default function AppointmentList() {
       ) : filtered.length === 0 ? (
         <Card>
           <EmptyState
-            icon={ClipboardList}
+            illustration={<EmptyCalendar />}
             title={`No ${tab.toLowerCase()} appointments`}
             description={tab === 'UPCOMING' ? 'Book an appointment to get started' : 'Nothing here yet'}
           />
@@ -103,9 +105,10 @@ export default function AppointmentList() {
             <Card key={apt.id}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
-                    <Calendar size={18} className="text-primary-600" />
-                  </div>
+                  <Avatar
+                    name={user.role === 'DOCTOR' ? `Patient ${apt.patientId}` : `Doctor ${apt.doctorId}`}
+                    size="md"
+                  />
                   <div>
                     <p className="text-sm font-semibold text-slate-800">Appointment <span className="font-mono">#{apt.id}</span></p>
                     <p className="text-xs text-slate-500">{formatDate(apt.appointmentDate)} at {formatTime(apt.startTime)}</p>

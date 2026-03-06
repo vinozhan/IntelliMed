@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { X, Heart } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { NAV_ITEMS } from '../../utils/constants';
+import Avatar from '../ui/Avatar';
 
 export default function Sidebar({ open, onClose }) {
   const { user } = useAuth();
@@ -60,7 +61,13 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="px-4 py-3 border-t border-slate-100 shrink-0">
-          <p className="text-xs text-slate-400 text-center">IntelliMed v1.0</p>
+          <div className="flex items-center gap-2.5">
+            <Avatar name={`${user?.firstName || ''} ${user?.lastName || ''}`} size="sm" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-700 truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-slate-400 truncate capitalize">{user?.role?.toLowerCase()}</p>
+            </div>
+          </div>
         </div>
       </aside>
     </>
