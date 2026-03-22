@@ -7,6 +7,10 @@ export const uploadReport = (formData) =>
   axiosInstance.post('/api/patients/reports', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+export const uploadProfilePicture = (formData) =>
+  axiosInstance.post('/api/patients/profile/picture', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 export const getReports = () => axiosInstance.get('/api/patients/reports');
 export const getReportsByPatientId = (patientId) =>
   axiosInstance.get(`/api/patients/${patientId}/reports`);

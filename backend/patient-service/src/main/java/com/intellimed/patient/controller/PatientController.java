@@ -41,6 +41,13 @@ public class PatientController {
         return ResponseEntity.ok(patientService.getPatientById(id));
     }
 
+    @PostMapping("/profile/picture")
+    public ResponseEntity<PatientProfileDto> uploadProfilePicture(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(patientService.uploadProfilePicture(userId, file));
+    }
+
     @PostMapping("/reports")
     public ResponseEntity<MedicalReport> uploadReport(
             @RequestHeader("X-User-Id") Long userId,

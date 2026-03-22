@@ -11,6 +11,7 @@ public class DoctorDto {
     private Integer experienceYears;
     private Double consultationFee;
     private String hospital;
+    private String profileImageUrl;
     private Boolean isVerified;
     private Double rating;
     private String firstName;

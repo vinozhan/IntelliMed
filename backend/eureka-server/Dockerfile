@@ -8,7 +8,7 @@ COPY src src
 RUN ./mvnw clean package -DskipTests -B
 
 FROM eclipse-temurin:17-jre-alpine
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN apk add --no-cache curl && addgroup -S appgroup && adduser -S appuser -G appgroup
 VOLUME /tmp
 COPY --from=build /app/target/*.jar app.jar
 USER appuser

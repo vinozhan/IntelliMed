@@ -77,7 +77,7 @@ export default function DoctorSearch() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <Avatar
-                    src={`/images/avatar-doctor-${(doc.id % 8) + 1}.png`}
+                    src={doc.profileImageUrl || '/images/default-avatar.svg'}
                     name={`${doc.firstName || 'Dr'} ${doc.lastName || ''}`}
                     size="lg"
                   />

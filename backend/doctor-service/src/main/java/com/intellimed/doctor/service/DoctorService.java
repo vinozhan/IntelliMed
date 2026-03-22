@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
+    private final S3Service s3Service;
 
     public DoctorDto createDoctor(Long userId, String firstName, String lastName, DoctorCreateRequest request) {
         if (doctorRepository.findByUserId(userId).isPresent()) {
@@ -32,6 +35,7 @@ public class DoctorService {
                 .experienceYears(request.getExperienceYears())
                 .consultationFee(request.getConsultationFee())
                 .hospital(request.getHospital())
+                .profileImageUrl(request.getProfileImageUrl())
                 .build();
 
         doctor = doctorRepository.save(doctor);
@@ -55,6 +59,19 @@ public class DoctorService {
         doctor.setHospital(request.getHospital());
 
         doctor = doctorRepository.save(doctor);
+        return toDto(doctor);
+    }
+
+    public DoctorDto uploadProfilePicture(Long userId, MultipartFile file) throws IOException {
+        Doctor doctor = doctorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor profile not found"));
+
+        s3Service.deleteFile(doctor.getProfileImageUrl());
+
+        String url = s3Service.uploadFile(file, "profiles");
+        doctor.setProfileImageUrl(url);
+        doctorRepository.save(doctor);
+
         return toDto(doctor);
     }
 
@@ -130,6 +147,7 @@ public class DoctorService {
                 .experienceYears(doctor.getExperienceYears())
                 .consultationFee(doctor.getConsultationFee())
                 .hospital(doctor.getHospital())
+                .profileImageUrl(doctor.getProfileImageUrl())
                 .isVerified(doctor.getIsVerified())
                 .rating(doctor.getRating())
                 .build();

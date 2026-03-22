@@ -23,6 +23,8 @@ public class Doctor {
     private Double consultationFee;
     private String hospital;
 
+    private String profileImageUrl;
+
     @Builder.Default
     private Boolean isVerified = false;
 
