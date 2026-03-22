@@ -2,12 +2,8 @@
 target/
 *.class
 *.jar
-!.mvn/wrapper/maven-wrapper.jar
-
-# Maven
-.mvn/
-mvnw
-mvnw.cmd
+# Maven - only ignore the downloaded wrapper jar (binary)
+.mvn/wrapper/maven-wrapper.jar
 
 # Node
 node_modules/
