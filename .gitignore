@@ -33,5 +33,4 @@ CLAUDE.md
 *.csv
 *.log
 BACKEND_API_REFERENCE.md
-frontend/public/images/
 docs/
