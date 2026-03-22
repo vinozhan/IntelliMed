@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { getPatientAppointments, getDoctorAppointments, cancelAppointment, confirmAppointment, completeAppointment } from '../../api/appointmentApi';
+import {
+  getPatientAppointments, getDoctorAppointments,
+  cancelAppointment, confirmAppointment, completeAppointment, rejectAppointment,
+} from '../../api/appointmentApi';
 import { getDoctorPrescriptions } from '../../api/doctorApi';
-import { formatDate, formatTime, getStatusColor } from '../../utils/helpers';
+import { formatDate, formatTime } from '../../utils/helpers';
 import { toast } from 'react-toastify';
+import PageHeader from '../ui/PageHeader';
+import Card from '../ui/Card';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
+import Tabs from '../ui/Tabs';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import EmptyState from '../ui/EmptyState';
+import { SkeletonCard } from '../ui/Skeleton';
+import Avatar from '../ui/Avatar';
+import EmptyCalendar from '../illustrations/EmptyCalendar';
+import { Calendar, Video, ClipboardList } from 'lucide-react';
 
 export default function AppointmentList() {
   const { user } = useAuth();
@@ -12,129 +26,148 @@ export default function AppointmentList() {
   const [appointments, setAppointments] = useState([]);
   const [prescriptionMap, setPrescriptionMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('ALL');
+  const [confirmState, setConfirmState] = useState({ open: false, id: null, action: null });
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  useEffect(() => { fetchAppointments(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAppointments = async () => {
     try {
-      const { data } = user.role === 'DOCTOR'
-        ? await getDoctorAppointments()
-        : await getPatientAppointments();
+      const { data } = user.role === 'DOCTOR' ? await getDoctorAppointments() : await getPatientAppointments();
       setAppointments(data);
-
       if (user.role === 'DOCTOR') {
         try {
-          const { data: prescriptions } = await getDoctorPrescriptions();
+          const { data: rx } = await getDoctorPrescriptions();
           const map = {};
-          prescriptions.forEach(p => { map[p.appointmentId] = p; });
+          rx.forEach((p) => { map[p.appointmentId] = p; });
           setPrescriptionMap(map);
-        } catch {
-          // Prescriptions not available yet
-        }
+        } catch { /* prescriptions not available */ }
       }
-    } catch (err) {
-      toast.error('Failed to load appointments');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Failed to load appointments'); }
+    finally { setLoading(false); }
   };
 
-  const handleCancel = async (id) => {
+  const handleAction = async () => {
+    const { id, action, reason } = confirmState;
     try {
-      await cancelAppointment(id, 'Cancelled by user');
-      toast.success('Appointment cancelled');
+      if (action === 'cancel') await cancelAppointment(id, reason || 'Cancelled by user');
+      else if (action === 'reject') await rejectAppointment(id, reason || 'Rejected by doctor');
+      else if (action === 'confirm') await confirmAppointment(id);
+      else if (action === 'complete') await completeAppointment(id);
+      toast.success(`Appointment ${action}${action.endsWith('e') ? 'd' : 'ed'}`);
       fetchAppointments();
-    } catch (err) {
-      toast.error('Failed to cancel');
-    }
+    } catch { toast.error(`Failed to ${action}`); }
+    finally { setConfirmState({ open: false, id: null, action: null }); }
   };
 
-  const handleConfirm = async (id) => {
-    try {
-      await confirmAppointment(id);
-      toast.success('Appointment confirmed');
-      fetchAppointments();
-    } catch (err) {
-      toast.error('Failed to confirm');
-    }
-  };
+  const filtered = tab === 'ALL' ? appointments : appointments.filter((a) => {
+    if (tab === 'UPCOMING') return a.status === 'PENDING' || a.status === 'CONFIRMED';
+    return a.status === tab;
+  });
 
-  const handleComplete = async (id) => {
-    try {
-      await completeAppointment(id);
-      toast.success('Appointment completed');
-      fetchAppointments();
-    } catch (err) {
-      toast.error('Failed to complete');
-    }
+  const counts = {
+    ALL: appointments.length,
+    UPCOMING: appointments.filter((a) => a.status === 'PENDING' || a.status === 'CONFIRMED').length,
+    COMPLETED: appointments.filter((a) => a.status === 'COMPLETED').length,
+    CANCELLED: appointments.filter((a) => a.status === 'CANCELLED' || a.status === 'REJECTED').length,
   };
-
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">My Appointments</h1>
-      {appointments.length === 0 ? (
-        <p className="text-gray-500">No appointments found</p>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="Appointments" subtitle="Manage your upcoming and past appointments" />
+
+      <div className="mb-4 overflow-x-auto">
+        <Tabs
+          tabs={[
+            { value: 'ALL', label: 'All', count: counts.ALL },
+            { value: 'UPCOMING', label: 'Upcoming', count: counts.UPCOMING },
+            { value: 'COMPLETED', label: 'Completed', count: counts.COMPLETED },
+            { value: 'CANCELLED', label: 'Cancelled', count: counts.CANCELLED },
+          ]}
+          active={tab}
+          onChange={setTab}
+        />
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <EmptyState
+            illustration={<EmptyCalendar />}
+            title={`No ${tab.toLowerCase()} appointments`}
+            description={tab === 'UPCOMING' ? 'Book an appointment to get started' : 'Nothing here yet'}
+          />
+        </Card>
       ) : (
-        <div className="space-y-4">
-          {appointments.map((apt) => (
-            <div key={apt.id} className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-lg">Appointment #{apt.id}</p>
-                  <p className="text-gray-500">
-                    {formatDate(apt.appointmentDate)} at {formatTime(apt.startTime)}
-                  </p>
-                  {apt.reason && <p className="text-sm text-gray-400 mt-1">Reason: {apt.reason}</p>}
+        <div className="space-y-3">
+          {filtered.map((apt) => (
+            <Card key={apt.id}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Avatar
+                    name={user.role === 'DOCTOR' ? `Patient ${apt.patientId}` : `Doctor ${apt.doctorId}`}
+                    size="md"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Appointment <span className="font-mono">#{apt.id}</span></p>
+                    <p className="text-xs text-slate-500">{formatDate(apt.appointmentDate)} at {formatTime(apt.startTime)}</p>
+                    {apt.reason && <p className="text-xs text-slate-400 mt-0.5">{apt.reason}</p>}
+                  </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(apt.status)}`}>
-                  {apt.status}
-                </span>
+                <Badge status={apt.status} dot />
               </div>
-              <div className="flex gap-2 mt-4">
+
+              <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-50">
                 {apt.status === 'CONFIRMED' && (
-                  <Link to={`/appointments/${apt.id}/video`} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700">
-                    Join Video Call
+                  <Link to={`/appointments/${apt.id}/video`}>
+                    <Button size="sm" variant="accent" icon={Video}>Join Video Call</Button>
                   </Link>
                 )}
                 {user.role === 'DOCTOR' && apt.status === 'PENDING' && (
-                  <button onClick={() => handleConfirm(apt.id)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">
-                    Confirm
-                  </button>
+                  <>
+                    <Button size="sm" onClick={() => setConfirmState({ open: true, id: apt.id, action: 'confirm' })}>Confirm</Button>
+                    <Button size="sm" variant="danger" onClick={() => setConfirmState({ open: true, id: apt.id, action: 'reject' })}>Reject</Button>
+                  </>
                 )}
                 {user.role === 'DOCTOR' && apt.status === 'CONFIRMED' && (
-                  <button onClick={() => handleComplete(apt.id)} className="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-purple-700">
-                    Complete
-                  </button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmState({ open: true, id: apt.id, action: 'complete' })}>Mark Complete</Button>
                 )}
                 {user.role === 'DOCTOR' && apt.status === 'COMPLETED' && !prescriptionMap[apt.id] && (
-                  <button onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}`)} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-600">
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}`)}>
                     Write Prescription
-                  </button>
+                  </Button>
                 )}
                 {user.role === 'DOCTOR' && apt.status === 'COMPLETED' && prescriptionMap[apt.id] && (
-                  <button onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}&view=true`)} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-teal-700">
+                  <Button size="sm" variant="ghost" onClick={() => navigate(`/doctor/prescriptions?appointmentId=${apt.id}&patientId=${apt.patientId}&view=true`)}>
                     View Prescription
-                  </button>
+                  </Button>
                 )}
                 {(apt.status === 'PENDING' || apt.status === 'CONFIRMED') && (
-                  <button onClick={() => handleCancel(apt.id)} className="bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-sm hover:bg-red-200">
+                  <Button size="sm" variant="ghost" className="!text-danger-600" onClick={() => setConfirmState({ open: true, id: apt.id, action: 'cancel' })}>
                     Cancel
-                  </button>
+                  </Button>
                 )}
                 {apt.status === 'PENDING' && user.role === 'PATIENT' && (
-                  <Link to={`/payment/${apt.id}`} className="bg-yellow-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-yellow-600">
-                    Pay Now
+                  <Link to={`/payment/${apt.id}`}>
+                    <Button size="sm" variant="outline">Pay Now</Button>
                   </Link>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        onClose={() => setConfirmState({ open: false, id: null, action: null })}
+        onConfirm={handleAction}
+        title={`${confirmState.action ? confirmState.action.charAt(0).toUpperCase() + confirmState.action.slice(1) : ''} Appointment`}
+        message={`Are you sure you want to ${confirmState.action} this appointment?`}
+        confirmLabel={confirmState.action ? confirmState.action.charAt(0).toUpperCase() + confirmState.action.slice(1) : 'Confirm'}
+        variant={confirmState.action === 'cancel' || confirmState.action === 'reject' ? 'danger' : 'primary'}
+      />
     </div>
   );
 }

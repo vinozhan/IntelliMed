@@ -1,153 +1,81 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Heart } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const dashboardPath = user?.role === 'DOCTOR' ? '/doctor/dashboard'
+    : user?.role === 'ADMIN' ? '/admin/dashboard'
+    : '/patient/dashboard';
 
   return (
-    <nav className="bg-white shadow-md">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60" role="navigation" aria-label="Public navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-600">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <Heart className="text-white" size={18} />
+            </div>
+            <Link to="/" className="text-xl font-bold font-heading text-slate-800">
               IntelliMed
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
-            {(!user || user.role !== 'DOCTOR') && (
-              <Link to="/doctors" className="text-gray-600 hover:text-blue-600">
-                Find Doctors
-              </Link>
-            )}
+          <div className="hidden md:flex items-center gap-2">
+            <Link to="/doctors" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors">
+              Find Doctors
+            </Link>
             {!user ? (
               <>
-                <Link to="/login" className="text-gray-600 hover:text-blue-600">
-                  Login
+                <Link to="/login" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors">
+                  Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 active:scale-[0.98] transition-all"
                 >
-                  Register
+                  Get Started
                 </Link>
               </>
             ) : (
-              <>
-                {user.role === 'PATIENT' && (
-                  <>
-                    <Link to="/patient/dashboard" className="text-gray-600 hover:text-blue-600">
-                      Dashboard
-                    </Link>
-                    <Link to="/patient/appointments" className="text-gray-600 hover:text-blue-600">
-                      Appointments
-                    </Link>
-                    <Link to="/patient/prescriptions" className="text-gray-600 hover:text-blue-600">
-                      Prescriptions
-                    </Link>
-                    <Link to="/symptom-checker" className="text-gray-600 hover:text-blue-600">
-                      AI Symptom Checker
-                    </Link>
-                  </>
-                )}
-                {user.role === 'DOCTOR' && (
-                  <>
-                    <Link to="/doctor/dashboard" className="text-gray-600 hover:text-blue-600">
-                      Dashboard
-                    </Link>
-                    <Link to="/doctor/appointments" className="text-gray-600 hover:text-blue-600">
-                      Appointments
-                    </Link>
-                  </>
-                )}
-                {user.role === 'ADMIN' && (
-                  <Link to="/admin/dashboard" className="text-gray-600 hover:text-blue-600">
-                    Admin
-                  </Link>
-                )}
-                <span className="text-gray-500">
-                  Hi, {user.firstName}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Logout
-                </button>
-              </>
+              <Link
+                to={dashboardPath}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 active:scale-[0.98] transition-all"
+              >
+                Dashboard
+              </Link>
             )}
           </div>
 
           <div className="md:hidden flex items-center">
-            <button onClick={() => setOpen(!open)}>
-              {open ? <X size={24} /> : <Menu size={24} />}
+            <button onClick={() => setOpen(!open)} className="p-2 rounded-lg hover:bg-slate-100" aria-label="Toggle menu">
+              {open ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
       </div>
 
       {open && (
-        <div className="md:hidden px-4 pb-4 space-y-2">
-          {(!user || user.role !== 'DOCTOR') && (
-            <Link to="/doctors" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-              Find Doctors
-            </Link>
-          )}
+        <div className="md:hidden border-t border-slate-100 bg-white px-4 pb-4 pt-2 space-y-1 animate-slide-up">
+          <Link to="/doctors" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50" onClick={() => setOpen(false)}>
+            Find Doctors
+          </Link>
           {!user ? (
             <>
-              <Link to="/login" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                Login
+              <Link to="/login" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50" onClick={() => setOpen(false)}>
+                Sign In
               </Link>
-              <Link to="/register" className="block text-blue-600 py-1" onClick={() => setOpen(false)}>
-                Register
+              <Link to="/register" className="block px-3 py-2 text-sm font-medium text-primary-600 rounded-lg hover:bg-primary-50" onClick={() => setOpen(false)}>
+                Get Started
               </Link>
             </>
           ) : (
-            <>
-              {user.role === 'PATIENT' && (
-                <>
-                  <Link to="/patient/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    Dashboard
-                  </Link>
-                  <Link to="/patient/appointments" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    Appointments
-                  </Link>
-                  <Link to="/patient/prescriptions" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    Prescriptions
-                  </Link>
-                  <Link to="/symptom-checker" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    AI Symptom Checker
-                  </Link>
-                </>
-              )}
-              {user.role === 'DOCTOR' && (
-                <>
-                  <Link to="/doctor/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    Dashboard
-                  </Link>
-                  <Link to="/doctor/appointments" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                    Appointments
-                  </Link>
-                </>
-              )}
-              {user.role === 'ADMIN' && (
-                <Link to="/admin/dashboard" className="block text-gray-600 py-1" onClick={() => setOpen(false)}>
-                  Admin
-                </Link>
-              )}
-              <button onClick={handleLogout} className="block text-red-600 py-1">
-                Logout
-              </button>
-            </>
+            <Link to={dashboardPath} className="block px-3 py-2 text-sm font-medium text-primary-600 rounded-lg hover:bg-primary-50" onClick={() => setOpen(false)}>
+              Dashboard
+            </Link>
           )}
         </div>
       )}

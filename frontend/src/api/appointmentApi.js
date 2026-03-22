@@ -9,3 +9,5 @@ export const cancelAppointment = (id, reason) =>
   axiosInstance.put(`/api/appointments/${id}/cancel`, { reason });
 export const confirmAppointment = (id) => axiosInstance.put(`/api/appointments/${id}/confirm`);
 export const completeAppointment = (id) => axiosInstance.put(`/api/appointments/${id}/complete`);
+export const rejectAppointment = (id, reason) =>
+  axiosInstance.put(`/api/appointments/${id}/reject`, { reason });

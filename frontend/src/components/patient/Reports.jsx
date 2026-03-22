@@ -1,33 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getReports, uploadReport } from '../../api/patientApi';
 import { formatDateTime } from '../../utils/helpers';
 import { toast } from 'react-toastify';
-import { Upload, FileText } from 'lucide-react';
+import PageHeader from '../ui/PageHeader';
+import Card from '../ui/Card';
+import Input from '../ui/Input';
+import EmptyState from '../ui/EmptyState';
+import { SkeletonCard } from '../ui/Skeleton';
+import EmptyInbox from '../illustrations/EmptyInbox';
+import { FileText, CloudUpload } from 'lucide-react';
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [description, setDescription] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  useEffect(() => { fetchReports(); }, []);
 
   const fetchReports = async () => {
-    try {
-      const { data } = await getReports();
-      setReports(data);
-    } catch (err) {
-      toast.error('Failed to load reports');
-    } finally {
-      setLoading(false);
-    }
+    try { const { data } = await getReports(); setReports(data); }
+    catch { toast.error('Failed to load reports'); }
+    finally { setLoading(false); }
   };
 
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleUpload = async (file) => {
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error('File too large. Maximum 10MB.'); return; }
     setUploading(true);
     try {
       const formData = new FormData();
@@ -37,59 +38,65 @@ export default function Reports() {
       toast.success('Report uploaded!');
       setDescription('');
       fetchReports();
-    } catch (err) {
-      toast.error('Failed to upload report');
-    } finally {
-      setUploading(false);
-    }
+    } catch { toast.error('Failed to upload report'); }
+    finally { setUploading(false); }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+    handleUpload(e.dataTransfer.files[0]);
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Medical Reports</h1>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="Medical Reports" subtitle="Upload and manage your medical documents" />
 
-      <div className="bg-white rounded-xl shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Upload New Report</h2>
-        <div className="space-y-3">
-          <input
-            type="text"
-            placeholder="Description (optional)"
-            className="w-full px-4 py-2 border rounded-lg"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <label className="flex items-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-blue-500">
-            <Upload size={20} className="text-gray-500" />
-            <span className="text-gray-500">{uploading ? 'Uploading...' : 'Choose file to upload'}</span>
-            <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
-          </label>
+      <Card className="mb-6">
+        <h2 className="text-base font-semibold text-slate-800 mb-4">Upload New Report</h2>
+        <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} className="mb-3" />
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`flex flex-col items-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+            dragActive ? 'border-primary-500 bg-primary-50' : 'border-slate-200 hover:border-primary-400 hover:bg-slate-50'
+          }`}
+        >
+          <CloudUpload size={32} className={dragActive ? 'text-primary-500' : 'text-slate-400'} />
+          <p className="text-sm text-slate-600 font-medium">{uploading ? 'Uploading...' : 'Drop a file here or click to browse'}</p>
+          <p className="text-xs text-slate-400">PDF, images up to 10MB</p>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => handleUpload(e.target.files[0])} disabled={uploading} />
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Your Reports</h2>
+      <Card>
+        <h2 className="text-base font-semibold text-slate-800 mb-4">Your Reports</h2>
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="space-y-3">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
         ) : reports.length === 0 ? (
-          <p className="text-gray-500">No reports uploaded yet</p>
+          <EmptyState illustration={<EmptyInbox />} title="No reports uploaded" description="Upload your medical reports for easy access" />
         ) : (
           <div className="space-y-3">
             {reports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={report.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <FileText className="text-blue-600" size={24} />
+                  <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
+                    <FileText size={18} className="text-primary-600" />
+                  </div>
                   <div>
-                    <p className="font-medium">{report.fileName}</p>
-                    <p className="text-sm text-gray-500">{report.description}</p>
-                    <p className="text-xs text-gray-400">{formatDateTime(report.uploadedAt)}</p>
+                    <p className="text-sm font-medium text-slate-800">{report.fileName}</p>
+                    {report.description && <p className="text-xs text-slate-500">{report.description}</p>}
+                    <p className="text-xs text-slate-400">{formatDateTime(report.uploadedAt)}</p>
                   </div>
                 </div>
-                <span className="text-sm text-gray-500">{report.fileType}</span>
+                <span className="text-xs text-slate-400 font-mono">{report.fileType}</span>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

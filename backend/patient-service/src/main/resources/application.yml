@@ -37,6 +37,13 @@ admin:
   email: ${ADMIN_EMAIL}
   password: ${ADMIN_PASSWORD}
 
+aws:
+  access-key-id: ${AWS_ACCESS_KEY_ID:}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:ap-south-1}
+  s3:
+    bucket: ${AWS_S3_BUCKET:intellimed-uploads}
+
 management:
   endpoints:
     web:

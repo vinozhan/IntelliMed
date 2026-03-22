@@ -1,64 +1,89 @@
 import { useState, useEffect } from 'react';
 import { getUnverifiedDoctors, verifyDoctor } from '../../api/doctorApi';
 import { toast } from 'react-toastify';
-import { CheckCircle } from 'lucide-react';
+import PageHeader from '../ui/PageHeader';
+import Card from '../ui/Card';
+import Button from '../ui/Button';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import EmptyState from '../ui/EmptyState';
+import { SkeletonCard } from '../ui/Skeleton';
+import { CheckCircle, UserCheck, Stethoscope, MapPin, Award } from 'lucide-react';
 
 export default function DoctorVerify() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [verifyId, setVerifyId] = useState(null);
 
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
+  useEffect(() => { fetchDoctors(); }, []);
 
   const fetchDoctors = async () => {
-    try {
-      const { data } = await getUnverifiedDoctors();
-      setDoctors(data);
-    } catch (err) {
-      toast.error('Failed to load doctors');
-    } finally {
-      setLoading(false);
-    }
+    try { const { data } = await getUnverifiedDoctors(); setDoctors(data); }
+    catch { toast.error('Failed to load doctors'); }
+    finally { setLoading(false); }
   };
 
-  const handleVerify = async (id) => {
+  const handleVerify = async () => {
     try {
-      await verifyDoctor(id);
+      await verifyDoctor(verifyId);
       toast.success('Doctor verified!');
       fetchDoctors();
-    } catch (err) {
-      toast.error('Failed to verify');
-    }
+    } catch { toast.error('Failed to verify'); }
+    finally { setVerifyId(null); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Doctor Verification</h1>
-      {doctors.length === 0 ? (
-        <p className="text-gray-500">No doctors pending verification</p>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="Doctor Verification" subtitle="Review and verify doctor profiles" />
+
+      {loading ? (
+        <div className="space-y-4">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
+      ) : doctors.length === 0 ? (
+        <Card>
+          <EmptyState icon={UserCheck} title="All caught up!" description="No doctors pending verification" />
+        </Card>
       ) : (
         <div className="space-y-4">
           {doctors.map((doc) => (
-            <div key={doc.id} className="bg-white rounded-xl shadow p-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">Dr. {doc.firstName || 'Doctor'} {doc.lastName || ''}</h3>
-                <p className="text-blue-600">{doc.specialty}</p>
-                <p className="text-sm text-gray-500">{doc.qualification} | {doc.experienceYears} years</p>
-                <p className="text-sm text-gray-500">{doc.hospital}</p>
+            <Card key={doc.id}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
+                    <Stethoscope size={22} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-800">Dr. {doc.firstName || 'Doctor'} {doc.lastName || ''}</h3>
+                    <p className="text-sm text-primary-600 font-medium">{doc.specialty}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                      {doc.qualification && (
+                        <span className="text-xs text-slate-500 flex items-center gap-1"><Award size={12} /> {doc.qualification}</span>
+                      )}
+                      {doc.hospital && (
+                        <span className="text-xs text-slate-500 flex items-center gap-1"><MapPin size={12} /> {doc.hospital}</span>
+                      )}
+                      {doc.experienceYears && (
+                        <span className="text-xs text-slate-500">{doc.experienceYears} years exp.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button icon={CheckCircle} variant="accent" onClick={() => setVerifyId(doc.id)}>
+                  Verify
+                </Button>
               </div>
-              <button
-                onClick={() => handleVerify(doc.id)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-              >
-                <CheckCircle size={18} /> Verify
-              </button>
-            </div>
+            </Card>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={verifyId !== null}
+        onClose={() => setVerifyId(null)}
+        onConfirm={handleVerify}
+        title="Verify Doctor"
+        message="Are you sure you want to verify this doctor? They will be marked as verified on the platform."
+        confirmLabel="Verify"
+        variant="primary"
+      />
     </div>
   );
 }

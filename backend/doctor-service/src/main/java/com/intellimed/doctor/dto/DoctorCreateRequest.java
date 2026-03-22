@@ -16,4 +16,5 @@ public class DoctorCreateRequest {
     @Positive(message = "Consultation fee must be positive")
     private Double consultationFee;
     private String hospital;
+    private String profileImageUrl;
 }

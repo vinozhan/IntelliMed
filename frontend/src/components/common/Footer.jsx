@@ -1,29 +1,38 @@
+import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
+
 export default function Footer() {
   return (
-    <footer className="bg-gray-800 text-white py-8 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-slate-900 text-slate-300" role="contentinfo">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl font-bold text-blue-400">IntelliMed</h3>
-            <p className="mt-2 text-gray-400">
-              AI-Enabled Smart Healthcare Platform
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
+                <Heart className="text-white" size={14} />
+              </div>
+              <span className="text-lg font-bold font-heading text-white">IntelliMed</span>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              AI-Enabled Smart Healthcare Platform. Your health, powered by intelligence.
             </p>
           </div>
           <div>
-            <h4 className="font-semibold mb-2">Quick Links</h4>
-            <ul className="space-y-1 text-gray-400">
-              <li><a href="/doctors" className="hover:text-white">Find Doctors</a></li>
-              <li><a href="/symptom-checker" className="hover:text-white">Symptom Checker</a></li>
-              <li><a href="/register" className="hover:text-white">Register</a></li>
+            <h4 className="text-sm font-semibold text-white mb-3">Quick Links</h4>
+            <ul className="space-y-2 text-sm" aria-label="Quick links">
+              <li><Link to="/doctors" className="text-slate-400 hover:text-white transition-colors">Find Doctors</Link></li>
+              <li><Link to="/register" className="text-slate-400 hover:text-white transition-colors">Create Account</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-2">Contact</h4>
-            <p className="text-gray-400">support@intellimed.com</p>
-            <p className="text-gray-400">+94 11 234 5678</p>
+            <h4 className="text-sm font-semibold text-white mb-3">Contact</h4>
+            <ul className="space-y-2 text-sm text-slate-400" aria-label="Contact information">
+              <li>support@intellimed.com</li>
+              <li>+94 11 234 5678</li>
+            </ul>
           </div>
         </div>
-        <div className="mt-8 pt-4 border-t border-gray-700 text-center text-gray-400">
+        <div className="mt-10 pt-6 border-t border-slate-800 text-center text-sm text-slate-500">
           &copy; {new Date().getFullYear()} IntelliMed. All rights reserved.
         </div>
       </div>

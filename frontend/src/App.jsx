@@ -3,8 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
+import AppLayout from './components/layout/AppLayout';
+import PublicLayout from './components/layout/PublicLayout';
 import PrivateRoute from './components/common/PrivateRoute';
 import RoleRoute from './components/common/RoleRoute';
 
@@ -37,89 +37,96 @@ import UserMgmt from './components/admin/UserMgmt';
 import DoctorVerify from './components/admin/DoctorVerify';
 import Transactions from './components/admin/Transactions';
 
+function AuthenticatedRoute({ children, roles }) {
+  const Wrapper = roles ? RoleRoute : PrivateRoute;
+  return (
+    <Wrapper roles={roles}>
+      <AppLayout>{children}</AppLayout>
+    </Wrapper>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen flex flex-col bg-gray-50">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/register" element={<RegisterForm />} />
-              <Route path="/doctors" element={<DoctorSearch />} />
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/register" element={<RegisterForm />} />
+          <Route path="/doctors" element={<PublicLayout><DoctorSearch /></PublicLayout>} />
 
-              {/* Patient Routes */}
-              <Route path="/patient/dashboard" element={
-                <RoleRoute roles={['PATIENT']}><PatientDashboard /></RoleRoute>
-              } />
-              <Route path="/patient/profile" element={
-                <RoleRoute roles={['PATIENT']}><PatientProfile /></RoleRoute>
-              } />
-              <Route path="/patient/reports" element={
-                <RoleRoute roles={['PATIENT']}><Reports /></RoleRoute>
-              } />
-              <Route path="/patient/prescriptions" element={
-                <RoleRoute roles={['PATIENT']}><PatientPrescriptions /></RoleRoute>
-              } />
-              <Route path="/patient/appointments" element={
-                <RoleRoute roles={['PATIENT']}><AppointmentList /></RoleRoute>
-              } />
-              <Route path="/patient/payments" element={
-                <RoleRoute roles={['PATIENT']}><PaymentHistory /></RoleRoute>
-              } />
+          {/* Patient Routes */}
+          <Route path="/patient/dashboard" element={
+            <AuthenticatedRoute roles={['PATIENT']}><PatientDashboard /></AuthenticatedRoute>
+          } />
+          <Route path="/patient/profile" element={
+            <AuthenticatedRoute roles={['PATIENT']}><PatientProfile /></AuthenticatedRoute>
+          } />
+          <Route path="/patient/reports" element={
+            <AuthenticatedRoute roles={['PATIENT']}><Reports /></AuthenticatedRoute>
+          } />
+          <Route path="/patient/prescriptions" element={
+            <AuthenticatedRoute roles={['PATIENT']}><PatientPrescriptions /></AuthenticatedRoute>
+          } />
+          <Route path="/patient/appointments" element={
+            <AuthenticatedRoute roles={['PATIENT']}><AppointmentList /></AuthenticatedRoute>
+          } />
+          <Route path="/patient/payments" element={
+            <AuthenticatedRoute roles={['PATIENT']}><PaymentHistory /></AuthenticatedRoute>
+          } />
 
-              {/* Doctor Routes */}
-              <Route path="/doctor/dashboard" element={
-                <RoleRoute roles={['DOCTOR']}><DoctorDashboard /></RoleRoute>
-              } />
-              <Route path="/doctor/profile" element={
-                <RoleRoute roles={['DOCTOR']}><DoctorProfile /></RoleRoute>
-              } />
-              <Route path="/doctor/availability" element={
-                <RoleRoute roles={['DOCTOR']}><DoctorAvailability /></RoleRoute>
-              } />
-              <Route path="/doctor/prescriptions" element={
-                <RoleRoute roles={['DOCTOR']}><DoctorPrescriptions /></RoleRoute>
-              } />
-              <Route path="/doctor/appointments" element={
-                <RoleRoute roles={['DOCTOR']}><AppointmentList /></RoleRoute>
-              } />
+          {/* Doctor Routes */}
+          <Route path="/doctor/dashboard" element={
+            <AuthenticatedRoute roles={['DOCTOR']}><DoctorDashboard /></AuthenticatedRoute>
+          } />
+          <Route path="/doctor/profile" element={
+            <AuthenticatedRoute roles={['DOCTOR']}><DoctorProfile /></AuthenticatedRoute>
+          } />
+          <Route path="/doctor/availability" element={
+            <AuthenticatedRoute roles={['DOCTOR']}><DoctorAvailability /></AuthenticatedRoute>
+          } />
+          <Route path="/doctor/prescriptions" element={
+            <AuthenticatedRoute roles={['DOCTOR']}><DoctorPrescriptions /></AuthenticatedRoute>
+          } />
+          <Route path="/doctor/appointments" element={
+            <AuthenticatedRoute roles={['DOCTOR']}><AppointmentList /></AuthenticatedRoute>
+          } />
 
-              {/* Shared Auth Routes */}
-              <Route path="/doctors/:doctorId/book" element={
-                <PrivateRoute><BookingForm /></PrivateRoute>
-              } />
-              <Route path="/appointments/:appointmentId/video" element={
-                <PrivateRoute><JitsiMeetingRoom /></PrivateRoute>
-              } />
-              <Route path="/payment/:appointmentId" element={
-                <RoleRoute roles={['PATIENT']}><PaymentForm /></RoleRoute>
-              } />
-              <Route path="/symptom-checker" element={
-                <RoleRoute roles={['PATIENT']}><SymptomChecker /></RoleRoute>
-              } />
+          {/* Shared Auth Routes */}
+          <Route path="/doctors/:doctorId/book" element={
+            <AuthenticatedRoute><BookingForm /></AuthenticatedRoute>
+          } />
+          <Route path="/appointments/:appointmentId/video" element={
+            <PrivateRoute><JitsiMeetingRoom /></PrivateRoute>
+          } />
+          <Route path="/payment/:appointmentId" element={
+            <AuthenticatedRoute roles={['PATIENT']}><PaymentForm /></AuthenticatedRoute>
+          } />
+          <Route path="/symptom-checker" element={
+            <AuthenticatedRoute roles={['PATIENT']}><SymptomChecker /></AuthenticatedRoute>
+          } />
 
-              {/* Admin Routes */}
-              <Route path="/admin/dashboard" element={
-                <RoleRoute roles={['ADMIN']}><AdminDashboard /></RoleRoute>
-              } />
-              <Route path="/admin/users" element={
-                <RoleRoute roles={['ADMIN']}><UserMgmt /></RoleRoute>
-              } />
-              <Route path="/admin/doctors/verify" element={
-                <RoleRoute roles={['ADMIN']}><DoctorVerify /></RoleRoute>
-              } />
-              <Route path="/admin/transactions" element={
-                <RoleRoute roles={['ADMIN']}><Transactions /></RoleRoute>
-              } />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-        <ToastContainer position="top-right" autoClose={3000} />
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={
+            <AuthenticatedRoute roles={['ADMIN']}><AdminDashboard /></AuthenticatedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <AuthenticatedRoute roles={['ADMIN']}><UserMgmt /></AuthenticatedRoute>
+          } />
+          <Route path="/admin/doctors/verify" element={
+            <AuthenticatedRoute roles={['ADMIN']}><DoctorVerify /></AuthenticatedRoute>
+          } />
+          <Route path="/admin/transactions" element={
+            <AuthenticatedRoute roles={['ADMIN']}><Transactions /></AuthenticatedRoute>
+          } />
+        </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          toastClassName="!rounded-xl !shadow-lg !font-body"
+        />
       </Router>
     </AuthProvider>
   );
