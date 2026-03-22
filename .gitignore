@@ -30,6 +30,7 @@ Thumbs.db
 # Uploads
 uploads/
 
+
 #text
 *.txt
 CLAUDE.md
@@ -37,3 +38,4 @@ CLAUDE.md
 *.log
 BACKEND_API_REFERENCE.md
 frontend/public/images/
+docs/

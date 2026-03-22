@@ -4,6 +4,10 @@ export const createDoctorProfile = (data) => axiosInstance.post('/api/doctors', 
 export const getDoctorProfile = () => axiosInstance.get('/api/doctors/profile');
 export const updateDoctorProfile = (data) => axiosInstance.put('/api/doctors/profile', data);
 export const getDoctorById = (id) => axiosInstance.get(`/api/doctors/${id}`);
+export const uploadProfilePicture = (formData) =>
+  axiosInstance.post('/api/doctors/profile/picture', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 export const searchDoctors = (params) => axiosInstance.get('/api/doctors', { params });
 export const getSpecialties = () => axiosInstance.get('/api/doctors/specialties');
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getDoctorProfile, createDoctorProfile, updateDoctorProfile, getSpecialties } from '../../api/doctorApi';
+import { useState, useEffect, useRef } from 'react';
+import { getDoctorProfile, createDoctorProfile, updateDoctorProfile, getSpecialties, uploadProfilePicture } from '../../api/doctorApi';
 import { toast } from 'react-toastify';
 import useFormValidation from '../../hooks/useFormValidation';
 import PageHeader from '../ui/PageHeader';
@@ -9,7 +9,8 @@ import Select from '../ui/Select';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import Skeleton from '../ui/Skeleton';
-import { BadgeCheck, Clock } from 'lucide-react';
+import Avatar from '../ui/Avatar';
+import { BadgeCheck, Clock, Camera, Loader2 } from 'lucide-react';
 
 export default function DoctorProfile() {
   const [profile, setProfile] = useState({
@@ -19,6 +20,8 @@ export default function DoctorProfile() {
   const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const { errors, validateAll, clearError } = useFormValidation({
     specialty: [{ required: true, message: 'Specialty is required' }],
@@ -41,6 +44,34 @@ export default function DoctorProfile() {
   const handleChange = (field, value) => {
     setProfile({ ...profile, [field]: value });
     clearError(field);
+  };
+
+  const handlePictureUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await uploadProfilePicture(formData);
+      setProfile(data);
+      toast.success('Profile picture updated!');
+    } catch {
+      toast.error('Failed to upload picture');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleSave = async (e) => {
@@ -79,12 +110,38 @@ export default function DoctorProfile() {
       />
 
       {!isNew && (
-        <div className="flex items-center gap-2 mb-6">
-          {profile.isVerified ? (
-            <Badge color="accent" variant="soft"><BadgeCheck size={12} className="inline" /> Verified</Badge>
-          ) : (
-            <Badge color="warm" variant="soft"><Clock size={12} className="inline" /> Pending Verification</Badge>
-          )}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            {uploading ? (
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                <Loader2 size={24} className="text-primary-600 animate-spin" />
+              </div>
+            ) : (
+              <Avatar
+                src={profile.profileImageUrl || '/images/default-avatar.svg'}
+                name={`${profile.firstName || 'Dr'} ${profile.lastName || ''}`}
+                size="xl"
+              />
+            )}
+            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera size={18} className="text-white" />
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePictureUpload}
+              className="hidden"
+            />
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-slate-800">Dr. {profile.firstName} {profile.lastName}</p>
+            {profile.isVerified ? (
+              <Badge color="accent" variant="soft"><BadgeCheck size={12} className="inline" /> Verified</Badge>
+            ) : (
+              <Badge color="warm" variant="soft"><Clock size={12} className="inline" /> Pending Verification</Badge>
+            )}
+          </div>
         </div>
       )}
 

@@ -4,6 +4,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ARG VITE_STRIPE_PK
+ENV VITE_API_BASE_URL=""
+ENV VITE_STRIPE_PK=${VITE_STRIPE_PK}
 RUN npm run build
 
 # Production stage

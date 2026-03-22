@@ -12,15 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.springframework.beans.factory.annotation.Value;
-
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,14 +22,7 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final MedicalReportRepository reportRepository;
-
-    @Value("${app.upload-dir:uploads/reports/}")
-    private String uploadDir;
-
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "application/pdf", "image/jpeg", "image/png", "image/gif"
-    );
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private final S3Service s3Service;
 
     public PatientProfileDto getProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -88,46 +74,34 @@ public class PatientService {
         return getProfile(patient.getUserId());
     }
 
+    public PatientProfileDto uploadProfilePicture(Long userId, MultipartFile file) throws IOException {
+        Patient patient = patientRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found"));
+
+        s3Service.deleteFile(patient.getProfileImageUrl());
+
+        String url = s3Service.uploadFile(file, "profiles");
+        patient.setProfileImageUrl(url);
+        patientRepository.save(patient);
+
+        return getProfile(userId);
+    }
+
     public MedicalReport uploadReport(Long userId, MultipartFile file, String description) throws IOException {
         Patient patient = patientRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found"));
 
-        // Validate file size
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new IllegalArgumentException("File size exceeds maximum allowed size of 10MB");
-        }
+        String url = s3Service.uploadFile(file, "reports");
 
-        // Validate file type
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new IllegalArgumentException("File type not allowed. Accepted types: PDF, JPEG, PNG, GIF");
-        }
-
-        // Sanitize filename: remove path traversal characters, keep only safe characters
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) originalFilename = "unknown";
         String sanitizedName = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_");
 
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        String fileName = UUID.randomUUID() + "_" + sanitizedName;
-        Path filePath = uploadPath.resolve(fileName).normalize();
-
-        // Ensure resolved path is still within upload directory
-        if (!filePath.startsWith(uploadPath.toAbsolutePath().normalize())) {
-            throw new IllegalArgumentException("Invalid file path");
-        }
-
-        Files.copy(file.getInputStream(), filePath);
-
         MedicalReport report = MedicalReport.builder()
                 .patientId(patient.getId())
                 .fileName(sanitizedName)
-                .fileUrl("/uploads/reports/" + fileName)
-                .fileType(contentType)
+                .fileUrl(url)
+                .fileType(file.getContentType())
                 .description(description)
                 .build();
 

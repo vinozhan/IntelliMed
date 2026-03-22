@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getPatientProfile, updatePatientProfile } from '../../api/patientApi';
+import { useState, useEffect, useRef } from 'react';
+import { getPatientProfile, updatePatientProfile, uploadProfilePicture } from '../../api/patientApi';
 import { toast } from 'react-toastify';
 import useFormValidation from '../../hooks/useFormValidation';
 import PageHeader from '../ui/PageHeader';
@@ -9,12 +9,15 @@ import Select from '../ui/Select';
 import Textarea from '../ui/Textarea';
 import Button from '../ui/Button';
 import Skeleton from '../ui/Skeleton';
-import { User } from 'lucide-react';
+import Avatar from '../ui/Avatar';
+import { Camera, Loader2 } from 'lucide-react';
 
 export default function PatientProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const { errors, validateAll, clearError } = useFormValidation({
     firstName: [{ required: true, message: 'First name is required' }],
@@ -31,6 +34,34 @@ export default function PatientProfile() {
   const handleChange = (field, value) => {
     setProfile({ ...profile, [field]: value });
     clearError(field);
+  };
+
+  const handlePictureUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await uploadProfilePicture(formData);
+      setProfile(data);
+      toast.success('Profile picture updated!');
+    } catch {
+      toast.error('Failed to upload picture');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleSave = async (e) => {
@@ -62,8 +93,28 @@ export default function PatientProfile() {
       <PageHeader title="My Profile" subtitle="Manage your personal and medical information" />
 
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center">
-          <User size={28} className="text-primary-600" />
+        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          {uploading ? (
+            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+              <Loader2 size={24} className="text-primary-600 animate-spin" />
+            </div>
+          ) : (
+            <Avatar
+              src={profile?.profileImageUrl || '/images/default-avatar.svg'}
+              name={`${profile?.firstName || ''} ${profile?.lastName || ''}`}
+              size="xl"
+            />
+          )}
+          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera size={18} className="text-white" />
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePictureUpload}
+            className="hidden"
+          />
         </div>
         <div>
           <p className="text-lg font-semibold text-slate-800">{profile?.firstName} {profile?.lastName}</p>

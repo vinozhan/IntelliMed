@@ -27,9 +27,9 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
 
   api-gateway:
     build: ./backend/api-gateway
@@ -53,7 +53,13 @@ services:
       DB_USERNAME: intellimed
       DB_PASSWORD: intellimed123
       JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/patient_db
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -71,6 +77,10 @@ services:
       DB_PASSWORD: intellimed123
       JWT_SECRET: ${JWT_SECRET}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctor_db
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -170,7 +180,10 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_STRIPE_PK: ${STRIPE_PUBLISHABLE_KEY}
     container_name: intellimed-frontend
     ports:
       - "80:80"

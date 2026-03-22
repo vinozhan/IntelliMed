@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -42,6 +44,13 @@ public class DoctorController {
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody DoctorCreateRequest request) {
         return ResponseEntity.ok(doctorService.updateProfile(userId, request));
+    }
+
+    @PostMapping("/profile/picture")
+    public ResponseEntity<DoctorDto> uploadProfilePicture(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(doctorService.uploadProfilePicture(userId, file));
     }
 
     @GetMapping("/{id}")
