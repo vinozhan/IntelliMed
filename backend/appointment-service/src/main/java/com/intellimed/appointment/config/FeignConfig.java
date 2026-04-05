@@ -20,6 +20,14 @@ public class FeignConfig {
                 if (auth != null) {
                     template.header("Authorization", auth);
                 }
+                String userId = request.getHeader("X-User-Id");
+                if (userId != null) {
+                    template.header("X-User-Id", userId);
+                }
+                String userRole = request.getHeader("X-User-Role");
+                if (userRole != null) {
+                    template.header("X-User-Role", userRole);
+                }
             }
         };
     }

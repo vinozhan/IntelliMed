@@ -7,9 +7,12 @@ spring:
   application:
     name: ai-symptom-checker
   datasource:
-    url: jdbc:postgresql://localhost:5432/ai_db
+    url: ${SPRING_DATASOURCE_URL:${SPRING_DATASOURCE_URL_AI:jdbc:postgresql://localhost:5432/ai_db}}
     username: ${DB_USERNAME:intellimed}
     password: ${DB_PASSWORD:intellimed123}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5
   jpa:
     hibernate:
       ddl-auto: update
@@ -30,9 +33,9 @@ jwt:
 
 ai:
   openai:
-    api-key: ${OPENAI_API_KEY:sk-XXXX}
-    model: gpt-4
-    api-url: https://api.openai.com/v1/chat/completions
+    api-key: ${GEMINI_API_KEY:}
+    model: gemini-2.5-flash
+    api-url: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
 
 management:
   endpoints:
