@@ -50,12 +50,12 @@ services:
       - "8081:8081"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/patient_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_PATIENT:-jdbc:postgresql://postgres:5432/patient_db}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
@@ -73,10 +73,10 @@ services:
       - "8082:8082"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       JWT_SECRET: ${JWT_SECRET}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctor_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_DOCTOR:-jdbc:postgresql://postgres:5432/doctor_db}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
@@ -94,10 +94,10 @@ services:
       - "8083:8083"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       JWT_SECRET: ${JWT_SECRET}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/appointment_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_APPOINTMENT:-jdbc:postgresql://postgres:5432/appointment_db}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -111,10 +111,10 @@ services:
       - "8084:8084"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       JWT_SECRET: ${JWT_SECRET}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/telemedicine_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_TELEMEDICINE:-jdbc:postgresql://postgres:5432/telemedicine_db}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -128,12 +128,12 @@ services:
       - "8085:8085"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       JWT_SECRET: ${JWT_SECRET}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_PAYMENT:-jdbc:postgresql://postgres:5432/payment_db}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -147,14 +147,14 @@ services:
       - "8086:8086"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       EMAIL_USERNAME: ${EMAIL_USERNAME}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
       TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_NOTIFICATION:-jdbc:postgresql://postgres:5432/notification_db}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -168,11 +168,11 @@ services:
       - "8087:8087"
     environment:
       EUREKA_URL: http://eureka-server:8761/eureka/
-      DB_USERNAME: intellimed
-      DB_PASSWORD: intellimed123
+      DB_USERNAME: ${DB_USERNAME:-intellimed}
+      DB_PASSWORD: ${DB_PASSWORD:-intellimed123}
       JWT_SECRET: ${JWT_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ai_db
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_AI:-jdbc:postgresql://postgres:5432/ai_db}
     depends_on:
       eureka-server:
         condition: service_healthy
