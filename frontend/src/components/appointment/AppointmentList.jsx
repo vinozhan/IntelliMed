@@ -6,6 +6,7 @@ import {
   cancelAppointment, confirmAppointment, completeAppointment, rejectAppointment,
 } from '../../api/appointmentApi';
 import { getDoctorPrescriptions } from '../../api/doctorApi';
+import { getPatientPayments } from '../../api/paymentApi';
 import { formatDate, formatTime } from '../../utils/helpers';
 import { toast } from 'react-toastify';
 import PageHeader from '../ui/PageHeader';
@@ -28,6 +29,7 @@ export default function AppointmentList() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('ALL');
   const [confirmState, setConfirmState] = useState({ open: false, id: null, action: null });
+  const [paidAppointments, setPaidAppointments] = useState(new Set());
 
   useEffect(() => { fetchAppointments(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -42,6 +44,13 @@ export default function AppointmentList() {
           rx.forEach((p) => { map[p.appointmentId] = p; });
           setPrescriptionMap(map);
         } catch { /* prescriptions not available */ }
+      }
+      if (user.role === 'PATIENT') {
+        try {
+          const { data: payments } = await getPatientPayments();
+          const paid = new Set(payments.filter((p) => p.status === 'COMPLETED').map((p) => p.appointmentId));
+          setPaidAppointments(paid);
+        } catch { /* payments not available */ }
       }
     } catch { toast.error('Failed to load appointments'); }
     finally { setLoading(false); }
@@ -148,10 +157,13 @@ export default function AppointmentList() {
                     Cancel
                   </Button>
                 )}
-                {apt.status === 'PENDING' && user.role === 'PATIENT' && (
+                {apt.status === 'PENDING' && user.role === 'PATIENT' && !paidAppointments.has(apt.id) && (
                   <Link to={`/payment/${apt.id}`}>
                     <Button size="sm" variant="outline">Pay Now</Button>
                   </Link>
+                )}
+                {user.role === 'PATIENT' && paidAppointments.has(apt.id) && (
+                  <Badge color="accent" variant="soft">Paid</Badge>
                 )}
               </div>
             </Card>

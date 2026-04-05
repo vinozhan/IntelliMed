@@ -44,7 +44,7 @@ public class AiService {
             }
             Be conservative in your assessments. Always recommend seeing a doctor for proper diagnosis.
             """;
-
+    
     public SymptomCheckResponse checkSymptoms(Long patientId, SymptomCheckRequest request) {
         String userMessage = String.format(
                 "Patient symptoms: %s. Age: %s. Gender: %s.",
@@ -64,17 +64,34 @@ public class AiService {
                     "temperature", 0.3
             );
 
+            log.info("Calling AI API: model={}, url={}", model, apiUrl);
+
             String response = webClient.post()
                     .uri(apiUrl)
                     .header("Authorization", "Bearer " + apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
                     .retrieve()
+                    .onStatus(status -> status.isError(), clientResponse ->
+                            clientResponse.bodyToMono(String.class)
+                                    .flatMap(body -> {
+                                        log.error("AI API error response body: {}", body);
+                                        return reactor.core.publisher.Mono.error(
+                                                new RuntimeException(clientResponse.statusCode() + ": " + body));
+                                    }))
                     .bodyToMono(String.class)
                     .block();
 
+            log.info("AI API response received: {}", response != null ? response.substring(0, Math.min(200, response.length())) : "null");
+
             JsonNode responseNode = objectMapper.readTree(response);
             aiResponseText = responseNode.path("choices").get(0).path("message").path("content").asText();
+
+            // Strip markdown code block wrapper (```json ... ```) if present
+            aiResponseText = aiResponseText.strip();
+            if (aiResponseText.startsWith("```")) {
+                aiResponseText = aiResponseText.replaceFirst("^```\\w*\\n?", "").replaceFirst("\\n?```$", "").strip();
+            }
         } catch (Exception e) {
             log.error("AI API call failed: {}", e.getMessage());
             // Fallback response
