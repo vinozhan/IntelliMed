@@ -7,9 +7,12 @@ spring:
   application:
     name: doctor-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/doctor_db
+    url: ${SPRING_DATASOURCE_URL:${SPRING_DATASOURCE_URL_DOCTOR:jdbc:postgresql://localhost:5432/doctor_db}}
     username: ${DB_USERNAME:intellimed}
     password: ${DB_PASSWORD:intellimed123}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5
   jpa:
     hibernate:
       ddl-auto: update

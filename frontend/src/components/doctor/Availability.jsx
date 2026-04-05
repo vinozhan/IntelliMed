@@ -91,7 +91,7 @@ export default function DoctorAvailability() {
               <option value={45}>45 min</option>
               <option value={60}>60 min</option>
             </Select>
-            <Input label="Max Patients" type="number" min="1" value={form.maxPatients} onChange={(e) => setForm({ ...form, maxPatients: parseInt(e.target.value) })} />
+            <Input label="Max Patients Per Slot" type="number" min="1" value={form.maxPatients} onChange={(e) => setForm({ ...form, maxPatients: parseInt(e.target.value) })} />
           </div>
           <Button type="submit" icon={Plus}>Add Slot</Button>
         </Card>
